@@ -1,3 +1,4 @@
+'''Various tools for getting (sometimes astrophysically relevant) colors for plotting.'''
 import colormath.color_objects
 import colormath.color_conversions
 import matplotlib.pyplot as plt
