@@ -1,0 +1,314 @@
+'''Tools for dealing with 1D arrays, particularly timeseries and spectra.'''
+import matplotlib.pyplot as plt
+import numpy as np
+import astropy.modeling.models, astropy.modeling.fitting
+import scipy.interpolate, scipy.stats
+
+def peaks(x, y, plot=False, threshold=4, maskWidth=10):
+	'''Return the significant peaks in a 1D array.
+	
+			peaks(x, y, plot=False, threshold=4, maskWidth=10)
+			
+			required:
+				x, y = two 1D arrays
+			optional:
+				plot = False	# should we show a plot?
+				threshold = 4	# peaks above threshold significance are returned
+				maskWidth = 10	# when one peak is found, how wide of area is masked around it?
+	'''
+	mad = np.median(np.abs(y))
+	xPeaks, yPeaks = [],[]
+	mask = y*0.0 + 1.0
+	highest = np.where(y*mask == np.nanmax((y*mask)))[0]
+	if plot:
+		fi, ax = plt.subplots(2,1,sharex=True)
+		ax[1].plot(x,y)
+		ax[0].plot(x,y)
+		ax[0].set_yscale('log')
+		ax[0].set_ylim(y.min(), y.max()*2)	
+		ax[0].axhline(mad*threshold, xmin=x.min(), xmax=x.max(), color='black', alpha=0.3)		
+		ax[1].axhline(mad*threshold, xmin=x.min(), xmax=x.max(), color='black', alpha=0.3)		
+
+	highest = highest[0]
+	#print highest, highest.shape
+	while (y*mask)[highest] > threshold*mad:
+		g1 = astropy.modeling.models.Gaussian1D(amplitude=y[highest], mean=x[highest], stddev=1.0)
+		toMask = (g1.mean + np.arange(-g1.stddev.value*maskWidth, g1.stddev.value*maskWidth)).astype(int)
+		toMask = toMask[toMask < len(x)]
+		toMask = toMask[toMask >= 0]
+
+		if len(toMask) > 0:
+			gfitter = astropy.modeling.fitting.LevMarLSQFitter()
+			fit = gfitter(g1, x[toMask], y[toMask])
+			#print g1
+			if g1.stddev.value < 5:
+				xPeaks.append(fit.mean.value)
+				yPeaks.append(fit.amplitude.value)
+				if plot:
+					ax[0].plot(x[toMask], g1(x[toMask]))
+					ax[1].plot(x[toMask], g1(x[toMask]))
+			
+		mask[toMask] = 0.0
+		highest = np.where(y*mask == np.nanmax(y*mask))[0]
+		highest=highest[0]
+
+	
+	if plot:
+		ax[0].scatter(xPeaks, yPeaks)   
+		ax[1].scatter(xPeaks, yPeaks)
+		
+	return np.array(xPeaks), np.array(yPeaks)
+	
+def subtractContinuum(s, n=3):
+	'''Take a 1D array, use spline to subtract off continuum.
+	
+			subtractContinuum(s, n=3)
+			
+			required:
+			s = the array
+			
+			optional:
+			n = 3, the number of spline points to use
+	'''
+		
+	x = np.arange(len(s))
+	points = (np.arange(n)+1)*len(s)/(n+1)
+	spline = scipy.interpolate.LSQUnivariateSpline(x,s,points)
+	#plt.ion()
+	#plt.figure()
+	#plt.plot(x, s1)
+	#plt.plot(x, spline(x), linewidth=5, alpha=0.5)
+	return s - spline(x)
+
+def binsizes(x):
+	binsize = np.zeros_like(x)
+	binsize[0:-1] = (x[1:] - x[0:-1])
+	binsize[-1] = binsize[-2]
+	return binsize
+	
+def supersample(xin=None, yin=None, xout=None, demo=False, visualize=False, slow=True):
+	'''Super-sample an array onto a denser array, using nearest neighbor interpolation, handling edges of pixels properly.
+		(should be flux-preserving)
+			xin = input array of coordinates
+			yin = input array of values
+			xout = output array of coordinates where you would like values.
+		| xin[1:] - x[0:-1] must always be bigger than the largest spacing of the supersampled array |
+		| assumes coordinates are the center edge of bins, for both xin and xout |'''
+	# maybe I could make this faster using np.histogram?
+		
+	if demo:
+		visualize=True
+		n = 10
+		xin = np.arange(n)
+		yin = np.random.random(n) + xin
+		nout = (20+ np.random.random())*n
+		xout = np.linspace(xin.min()-2, xin.max()+2, nout)
+	
+	assert(xin is not None)			
+	assert(yin is not None)			
+	assert(xout is not None)			
+
+	xinbinsize = binsizes(xin)
+	xinleft = xin - xinbinsize/2.0
+	xinright = xin +xinbinsize/2.0
+	
+	xoutbinsize = binsizes(xout)
+	xoutleft = xout - xoutbinsize/2.0
+	xoutright = xout + xoutbinsize/2.0
+
+	if slow:
+		yout = np.zeros_like(xout).astype(np.float)
+		for out in range(len(xout)):
+			try:
+				inleft = (xinleft <= xoutleft[out]).nonzero()[0].max()
+			except:
+				inleft = 0
+	
+			try:		
+				inright = (xinright >= xoutright[out]).nonzero()[0].min()
+			except:
+				inright = -1
+		
+			leftweight = (np.minimum(xinright[inleft], xoutright[out]) - xoutleft[out])/(xinright[inleft] - xinleft[inleft])
+			rightweight = (xoutright[out] - np.maximum(xinleft[inright],xoutleft[out]))/(xinright[inright] - xinleft[inright])*(inright != inleft)
+		
+			yout[out] = (leftweight*yin[inleft] + rightweight*yin[inright])/(leftweight + rightweight)
+			#if renormalize:
+			#	yout[out] *= (0.5*xinbinsize[inleft] + 0.5*xinbinsize[inright])/xoutbinsize[out]
+			#print "{0:4f} to {1:4f} = {2:6f}x{3:6f} + {4:6f}x{5:6f}".format(xoutleft[out], xoutright[out], leftweight, xin[inleft], rightweight, xin[inright])
+		yout[xoutright > xinright.max()] = 0	
+		yout[xoutleft < xinleft.min()] = 0	
+	else:
+		
+		ones = np.ones((len(xin), len(xout)))
+		
+		# set up the input arrays
+		sh = (len(xin),1)
+		matrix_xinleft = ones*xinleft.reshape(sh)
+		matrix_xinright = ones*xinright.reshape(sh)		
+		matrix_xinbinsize = ones*xinbinsize.reshape(sh)		
+		matrix_yin = ones*yin.reshape(sh)		
+		
+		# set up temporary output arrays
+		matrix_xoutleft = xoutleft*ones
+		matrix_xoutright = xoutright*ones
+		
+		mask_left = (matrix_xinleft <= matrix_xoutleft) & (matrix_xinleft + matrix_xinbinsize >= matrix_xoutleft) 
+		mask_right = (matrix_xinleft <= matrix_xoutright) & (matrix_xinleft + matrix_xinbinsize >= matrix_xoutright) 
+		
+		leftweight = (np.minimum(matrix_xinright, matrix_xoutright) - matrix_xoutleft)/matrix_xinbinsize*mask_left
+		rightweight = (matrix_xoutright - np.maximum(matrix_xinleft,matrix_xoutleft))/matrix_xinbinsize*mask_right
+		yout = np.sum((leftweight*matrix_yin+ rightweight*matrix_yin),0)/np.sum(leftweight + rightweight,0)
+
+		
+		
+	'''ones = np.ones((len(xin), len(xout)))
+	matrix_xout = xout*ones
+	matrix_xoutbin = binsizes(xout)*ones
+
+
+	matrix_yin = ones*yin.reshape((len(xin),1))
+	matrix_left = ones*xinleft.reshape((len(xin),1))
+	matrix_right = ones*xinright.reshape((len(xin),1))
+
+	rightweight = (matrix_right - matrix_xout)/matrix_xoutbin
+	rightweight *= (matrix_right - matrix_xout < 1) * (matrix_xout - matrix_left >= 0)
+	print rightweight
+	print
+	leftweight = (matrix_xout - matrix_left)/matrix_xoutbin
+	leftweight *= (matrix_right - matrix_xout< 1) * (matrix_xout - matrix_left >= 0)
+	print leftweight
+	print
+	print leftweight + rightweight
+
+	#matrix_yout = matrix_yin[0:-1,:]*rightweight[0:-1,:] + matrix_yin[1:None,:]*leftweight[0:-1,:]
+	
+	matrix_yout = matrix_yin[0:-1,:]*leftweight[0:-1,:] + matrix_yin[1:None,:]*rightweight[1:None,:]'''
+	#yout = np.sum(matrix_yout, 0)
+	
+	if visualize:
+		plt.cla()
+		plot_xin = np.vstack((xinleft,xinright)).reshape((-1,),order='F')
+		plot_yin = np.vstack((yin,yin)).reshape((-1,),order='F')
+		plt.plot(plot_xin, plot_yin, alpha=0.5, linewidth=3, color='black')
+		badinterpolation = scipy.interpolate.interp1d(xin, yin, kind='linear', bounds_error=False, fill_value=0.0)
+		plt.plot(xout, badinterpolation(xout), color='red', alpha=0.2, linewidth=2)
+		
+		plot_xout = np.vstack((xoutleft,xoutright)).reshape((-1,),order='F')
+		plot_yout = np.vstack((yout,yout)).reshape((-1,),order='F')
+		plt.plot(plot_xout, plot_yout, color='orange', alpha=0.7, linewidth=4, markersize=10)
+		plt.plot(xout, yout, color='orange', alpha=0.7, linewidth=0, markersize=20)
+		a = raw_input('okay?')
+	return yout	
+	
+def plothistogram( y, nbins=None, binwidth=0.1, ax=plt.gca(), expectation=None, scale='linear', nsigma=5, **kwargs):
+	
+	if nbins is not None:
+		binwidth = (np.max(y) - np.min(y))/nbins
+	
+		
+	if expectation is not None:
+		mean = expectation[0]
+		width = expectation[1]
+		min = mean - nsigma*width
+		max = mean + nsigma*width
+	else:
+		pad = 3
+		min = np.min(y)-pad*binwidth
+		max = np.max(y)+pad*binwidth
+				
+	yhist, edges = np.histogram(y, bins=np.arange(min, max, binwidth))
+	if len(edges) == 1:
+		return
+	if np.max(yhist) == 0:
+		return
+	normalization = (len(y)+0.0)/nsigma
+	yhist = np.array(yhist).astype(float)/ normalization
+	xhist = (edges[1:] + edges[0:-1])/2.0
+	# if given an expectation, plot it as a histogram
+	if expectation is not None:
+		g = scipy.stats.norm(mean, width)
+		n = len(y)
+		exhist = np.zeros(len(xhist))
+		for i in range(len(xhist)):
+			start = xhist[i] - binwidth/2.0
+			finish = xhist[i] + binwidth/2.0
+			exhist[i] = n*(g.cdf(finish) - g.cdf(start))
+		bottom = np.maximum(exhist - np.sqrt(exhist), 0)/normalization
+		top = (exhist + np.sqrt(exhist))/normalization
+		
+		ax.fill_betweenx(xhist, bottom, top, color='gray', alpha=0.5, linewidth=4)
+		ax.plot(top, xhist, color='gray', alpha=0.5, linewidth=4)
+		
+	ax.plot(np.maximum(yhist, 0.000001/normalization), xhist,  **kwargs)
+	if scale == 'log':
+		ax.set_xscale('log')
+		ax.set_xlim(0.9/normalization, 1.5)
+	if scale == 'linear':
+		ax.set_xscale('linear')
+		ax.set_xlim(0, 1.1)
+	
+	#ax.set_ylim(min, max)
+	#ax.set_xticks([])
+	#ax.set_yticks([])
+	print xhist
+	print yhist
+	print exhist/normalization
+
+def binnedrms(y):
+	# define a dummy x variable
+	x = np.arange(len(y))
+	
+	n = np.arange(1,len(y)/3)
+	rms = np.zeros(len(n))
+	for i in range(len(n)):
+		binned = np.histogram(x, bins=np.arange(len(x)/n[i])*n[i], weights=y)[0]/n[i]
+		#print binned
+		rms[i] = np.std(binned)
+		#print n[i], rms[i]
+	return n, rms
+	
+def plotbinnedrms(y, ax=plt.gca(), xunit=1, scale='log', yunits=1, yrange=[50,5000], updateifpossible=True, **kwargs):
+	n, rms = binnedrms(y*yunits)
+	x = xunit*n
+
+	# if the plot is already full, 
+	try:
+		assert(updateifpossible)
+		lines = ax.get_lines()
+		lines[0].set_data(x, rms[0]/np.sqrt(n))
+		lines[1].set_data(x, rms)
+	except:
+		ax.plot(x, rms[0]/np.sqrt(n), linestyle='--', color='black', alpha=0.25, linewidth=3)
+		ax.plot(x, rms, **kwargs)
+		
+	if scale == 'log':
+		ax.set_xscale('log')
+		ax.set_yscale('log')
+		ax.set_ylim(*yrange)
+		ax.set_xlim(1, np.max(n))
+	else:
+		ax.set_xlim(0, np.max(x)+1)
+		ax.set_ylim(0, np.max(yrange))	
+
+def acf(y):
+	a = np.correlate(y,y,'full')
+	trimmed = a[len(a)/2:]
+	lag = np.arange(len(trimmed))
+	return lag, trimmed/np.correlate(y,y)
+
+		
+def plotautocorrelation(y, xunit=1, ax= plt.gca(), max=25,  yrange=[-0.2, 1], **kwargs):
+	lag, auto = acf(y)
+	x = lag*xunit
+	end = np.minimum(len(y), max)
+	#try:
+	#	lines = ax.get_lines()
+	#	lines[1].set_data
+	#except:
+	#	pass
+	ax.plot([0, end -1], [0,0], linestyle='--', color='black', alpha=0.25, linewidth=3)
+	ax.plot(x, auto, **kwargs)		
+	ax.set_xlim(-1, end)
+	ax.set_ylim(*yrange)
+	
