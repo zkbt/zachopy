@@ -1,4 +1,5 @@
 '''Wrappers to for reading files.'''
+import astropy.io.ascii
 
 def parameters(filename):
 	'''Read a Z-style parameter file into a dictionary. This file should look like:
@@ -81,3 +82,12 @@ def parameters(filename):
 			level = level[key]
 
 	return dictionary
+
+def table(filename, individuals=False):
+	'''Use astropy, 'cause it's super convenient!
+
+		For cool tricks with astropy tables, check out astropy.readthedocs.org'''
+	return astropy.io.ascii.read(filename)
+
+def mind(*args, **kwargs):
+	return 42
