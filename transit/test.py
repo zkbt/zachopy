@@ -1,11 +1,11 @@
 import Planet, Star, Instrument, TM, TLC
-import numpy as np 	
+import numpy as np
 if True:#__name__ == '__main__':
 	p = Planet.Planet()
 	s = Star.Star()
 	i = Instrument.Instrument()
 	tm = TM.TM(planet=p, star=s, instrument=i)
-	
+
 	bjd = np.linspace(p.t0.value - p.duration*1, p.t0.value + p.duration*1, 300)
 	fluxerr = 0.001*np.ones_like(bjd)
 	tlc = TLC.TLC(bjd, np.ones_like(bjd), fluxerr)
@@ -15,13 +15,13 @@ if True:#__name__ == '__main__':
 	tm.planet.rp_over_rs.float(0.1, [0.05, 0.15])
 	tm.instrument.C.float(1, [0.99,1.01])
 	tm.fastfit()
-	a = raw_input('How did you feel about this test?')
-	#tlc.plot()
+	tlc.LightcurvePlots()
 	#tm.plot()
-	
+	a = raw_input('How did you feel about this test?')
+
 '''	def demo(self):
 		parm = self.ebparams
-		
+
 		# Simple (but not astronomer friendly) dump of model parameters.
 		print "Model parameters:"
 

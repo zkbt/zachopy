@@ -23,6 +23,11 @@ class ds9(Display):
         except:
             print self.prefix + 'failed!'.format(self.name)
 
+    def match(self, what=['frame image', 'scale', 'colorbar']):
+        '''Make all the frames match the current one.'''
+        for w in what:
+            self.window.set('match {0}'.format(w))
+
     def rgb(self, r, g, b, clobber=True):
         '''Display three images as RGB in ds9.'''
         if clobber:
@@ -36,19 +41,32 @@ class ds9(Display):
         self.window.set_np2arr(b.astype(np.float))
         self.window.set("rgb red")
 
-    def many(self, inputimages, clobber=True):
+    def many(self, inputimages, clobber=True, depth=-1, limit=25):
         '''Display a bunch of images in ds9, each in its own frame.'''
         images = np.array(inputimages)
         if clobber:
           self.window.set("frame delete all")
 
+        # is the "cube" really just a 1D or 2D image?
         if len(images.shape) <= 2:
-          self.windowone(images, clobber=clobber)
+          self.one(images, clobber=clobber)
           return
 
-        for i in range(images.shape[0]):
-          self.window.set("frame {0}".format(i))
-          self.window.set_np2arr(images[i].astype(np.float))
+        # loop through the "depth" axis, which is by default the final one
+        if len(images.shape) == 3:
+
+            # only display up to a certain number of images
+            if images.shape[-1] > limit:
+                print self.prefix + "going to display only {0:.0f} images, for impatience's sake".format(limit)
+
+            # display all the images
+            for i in range(np.minimum(images.shape[depth], limit)):
+                self.window.set("frame {0}".format(i))
+                self.window.set_np2arr(images.take(i,axis=depth).astype(np.float))
+
+            return
+
+        print self.prefix + 'Uh-oh! Image array seems to have a dimension other than 1, 2, or 3!'
 
     def one(self, image, clobber=False):
         '''Display one image in ds9, with option to empty all grames first.'''
