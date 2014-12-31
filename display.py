@@ -5,6 +5,7 @@ try:
     import ds9 as pyds9
 except:
     print "Uh-oh! zachopy.display is trying to 'import ds9' and can't seem to do it. Please install it (http://hea-www.harvard.edu/RD/pyds9/)."
+import regions
 
 class Display(object):
     '''Display 2D or 3D datasets, using a variety of methods.'''
@@ -41,11 +42,21 @@ class ds9(Display):
         self.window.set_np2arr(b.astype(np.float))
         self.window.set("rgb red")
 
-    def many(self, inputimages, clobber=True, depth=-1, limit=25):
+    def showRegions(self, regions):
+        filename = 'temporary.ds9.regions.reg'
+        regions.write(filename)
+        self.window.set("regions load {0}".format(filename))
+
+    def many(self, inputimages, clobber=True, depth=-1, limit=25, single=True, regions=None):
         '''Display a bunch of images in ds9, each in its own frame.'''
         images = np.array(inputimages)
         if clobber:
           self.window.set("frame delete all")
+
+        if single:
+            self.window.set('frame single')
+        else:
+            self.window.set('frame tile')
 
         # is the "cube" really just a 1D or 2D image?
         if len(images.shape) <= 2:
@@ -63,7 +74,8 @@ class ds9(Display):
             for i in range(np.minimum(images.shape[depth], limit)):
                 self.window.set("frame {0}".format(i))
                 self.window.set_np2arr(images.take(i,axis=depth).astype(np.float))
-
+                if regions is not None:
+                    self.showRegions(regions)
             return
 
         print self.prefix + 'Uh-oh! Image array seems to have a dimension other than 1, 2, or 3!'
