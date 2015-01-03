@@ -29,7 +29,7 @@ class ds9(Display):
         for w in what:
             self.window.set('match {0}'.format(w))
 
-    def rgb(self, r, g, b, clobber=True):
+    def rgb(self, r, g, b, clobber=True, regions=None):
         '''Display three images as RGB in ds9.'''
         if clobber:
           self.window.set("frame delete all")
@@ -41,22 +41,37 @@ class ds9(Display):
         self.window.set("rgb blue")
         self.window.set_np2arr(b.astype(np.float))
         self.window.set("rgb red")
+        self.applyOptionsToFrame(**options)
+
+
+    def applyOptionsToFrame(self, **options):
+        try:
+            self.showRegions(options['regions'])
+        except:
+            pass
+
+        try:
+            if options['invert']:
+                self.window.set('cmap invert')
+        except:
+            pass
+
 
     def showRegions(self, regions):
         filename = 'temporary.ds9.regions.reg'
         regions.write(filename)
         self.window.set("regions load {0}".format(filename))
 
-    def many(self, inputimages, clobber=True, depth=-1, limit=25, single=True, regions=None):
+    def many(self, inputimages, clobber=True, depth=-1, limit=25, single=True, **options):
         '''Display a bunch of images in ds9, each in its own frame.'''
         images = np.array(inputimages)
         if clobber:
           self.window.set("frame delete all")
 
         if single:
-            self.window.set('frame single')
+            self.window.set('single')
         else:
-            self.window.set('frame tile')
+            self.window.set('tile')
 
         # is the "cube" really just a 1D or 2D image?
         if len(images.shape) <= 2:
@@ -74,18 +89,19 @@ class ds9(Display):
             for i in range(np.minimum(images.shape[depth], limit)):
                 self.window.set("frame {0}".format(i))
                 self.window.set_np2arr(images.take(i,axis=depth).astype(np.float))
-                if regions is not None:
-                    self.showRegions(regions)
+                self.applyOptionsToFrame(**options)
             return
 
         print self.prefix + 'Uh-oh! Image array seems to have a dimension other than 1, 2, or 3!'
 
-    def one(self, image, clobber=False):
+    def one(self, image, clobber=False, regions=None):
         '''Display one image in ds9, with option to empty all grames first.'''
         if clobber:
             self.window.set("frame delete all")
         self.window.set("frame new")
         self.window.set_np2arr(image.astype(np.float))
+        self.applyOptionsToFrame(**options)
+
 
     def replace(self, image, i):
         '''Replace the image in the a specific ds9 frame with a new one.'''
@@ -95,3 +111,7 @@ class ds9(Display):
     def update(self, image, clobber=False):
         '''Update the image in this frame with an updated one.'''
         self.window.set_np2arr(image.astype(np.float))
+
+    def saveimage(self, filename):
+        self.window.set('raise')
+        self.window.set('saveimage {0}'.format(filename))
