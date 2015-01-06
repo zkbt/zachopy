@@ -6,10 +6,10 @@ import numpy as np
 
 
 def nm2rgb(inputnm, intensity=1.0):
-	
+	'''Convert a wavelength (or uniform range of wavelengths) into RGB colors usable by Python.'''
 	if np.min(inputnm) <= 350.0 or np.max(inputnm) >= 800.0:
 		return 0,0,0
-	
+
 	# create an SED, with 10 nm increments
 	wavelengths = np.arange(340.0, 840.0, 10.0)
 	intensities = np.zeros_like(wavelengths)
@@ -23,13 +23,14 @@ def nm2rgb(inputnm, intensity=1.0):
 	spectral = colormath.color_objects.SpectralColor(*intensities)
 	rgb = colormath.color_conversions.convert_color(spectral, colormath.color_objects.sRGBColor)
 	return rgb.clamped_rgb_r, rgb.clamped_rgb_g, rgb.clamped_rgb_b
-	
+
 def monochromaticdemo():
+	'''Test of nm2rgb, for a single wavelength.'''
 	n = 1000
 	x = np.linspace(340, 1000, n)
 	colors = [nm2rgb(c) for c in x]
 	plt.ion()
-	
+
 	plt.cla()
 	fi, ax = plt.subplots(2,1, sharex=True)
 	ax[0].plot(x, [c[0] for c in colors], color='red')
@@ -37,13 +38,15 @@ def monochromaticdemo():
 	ax[0].plot(x, [c[2] for c in colors], color='blue')
 	ax[1].scatter(x, np.random.normal(0,1,n), color= colors, s=100)
 	ax[1].set_xlim(min(x), max(x))
-	
+
 def broadbanddemo(width=50):
+	'''Test of nm2rgb, for a range of wavelengths.'''
+
 	n = 1000
 	x = np.linspace(340, 1000, n)
 	colors = [nm2rgb([c-width, c+width]) for c in x]
 	plt.ion()
-	
+
 	plt.cla()
 	fi, ax = plt.subplots(2,1, sharex=True)
 	ax[0].plot(x, [c[0] for c in colors], color='red')
@@ -51,4 +54,3 @@ def broadbanddemo(width=50):
 	ax[0].plot(x, [c[2] for c in colors], color='blue')
 	ax[1].scatter(x, np.random.normal(0,1,n), color= colors, s=100)
 	ax[1].set_xlim(min(x), max(x))
-	

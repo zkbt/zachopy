@@ -5,7 +5,7 @@
 import utils
 import finder
 import iplot
-import mpfit.mpfit as mpfit
+import borrowed.mpfit.mpfit as mpfit
 import oned
 import regions
 import read

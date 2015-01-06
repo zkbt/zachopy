@@ -1,4 +1,4 @@
-'''Wrappers to for reading files.'''
+'''Simple wrappers for reading files.'''
 import astropy.io.ascii, numpy as np
 
 def parameters(filename):
