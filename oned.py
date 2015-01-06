@@ -6,9 +6,9 @@ import scipy.interpolate, scipy.stats
 
 def peaks(x, y, plot=False, threshold=4, maskWidth=10):
 	'''Return the significant peaks in a 1D array.
-	
+
 			peaks(x, y, plot=False, threshold=4, maskWidth=10)
-			
+
 			required:
 				x, y = two 1D arrays
 			optional:
@@ -25,9 +25,9 @@ def peaks(x, y, plot=False, threshold=4, maskWidth=10):
 		ax[1].plot(x,y)
 		ax[0].plot(x,y)
 		ax[0].set_yscale('log')
-		ax[0].set_ylim(y.min(), y.max()*2)	
-		ax[0].axhline(mad*threshold, xmin=x.min(), xmax=x.max(), color='black', alpha=0.3)		
-		ax[1].axhline(mad*threshold, xmin=x.min(), xmax=x.max(), color='black', alpha=0.3)		
+		ax[0].set_ylim(y.min(), y.max()*2)
+		ax[0].axhline(mad*threshold, xmin=x.min(), xmax=x.max(), color='black', alpha=0.3)
+		ax[1].axhline(mad*threshold, xmin=x.min(), xmax=x.max(), color='black', alpha=0.3)
 
 	highest = highest[0]
 	#print highest, highest.shape
@@ -47,30 +47,30 @@ def peaks(x, y, plot=False, threshold=4, maskWidth=10):
 				if plot:
 					ax[0].plot(x[toMask], g1(x[toMask]))
 					ax[1].plot(x[toMask], g1(x[toMask]))
-			
+
 		mask[toMask] = 0.0
 		highest = np.where(y*mask == np.nanmax(y*mask))[0]
 		highest=highest[0]
 
-	
+
 	if plot:
-		ax[0].scatter(xPeaks, yPeaks)   
+		ax[0].scatter(xPeaks, yPeaks)
 		ax[1].scatter(xPeaks, yPeaks)
-		
+
 	return np.array(xPeaks), np.array(yPeaks)
-	
+
 def subtractContinuum(s, n=3):
 	'''Take a 1D array, use spline to subtract off continuum.
-	
+
 			subtractContinuum(s, n=3)
-			
+
 			required:
 			s = the array
-			
+
 			optional:
 			n = 3, the number of spline points to use
 	'''
-		
+
 	x = np.arange(len(s))
 	points = (np.arange(n)+1)*len(s)/(n+1)
 	spline = scipy.interpolate.LSQUnivariateSpline(x,s,points)
@@ -85,7 +85,7 @@ def binsizes(x):
 	binsize[0:-1] = (x[1:] - x[0:-1])
 	binsize[-1] = binsize[-2]
 	return binsize
-	
+
 def supersample(xin=None, yin=None, xout=None, demo=False, visualize=False, slow=True):
 	'''Super-sample an array onto a denser array, using nearest neighbor interpolation, handling edges of pixels properly.
 		(should be flux-preserving)
@@ -95,7 +95,7 @@ def supersample(xin=None, yin=None, xout=None, demo=False, visualize=False, slow
 		| xin[1:] - x[0:-1] must always be bigger than the largest spacing of the supersampled array |
 		| assumes coordinates are the center edge of bins, for both xin and xout |'''
 	# maybe I could make this faster using np.histogram?
-		
+
 	if demo:
 		visualize=True
 		n = 10
@@ -103,15 +103,15 @@ def supersample(xin=None, yin=None, xout=None, demo=False, visualize=False, slow
 		yin = np.random.random(n) + xin
 		nout = (20+ np.random.random())*n
 		xout = np.linspace(xin.min()-2, xin.max()+2, nout)
-	
-	assert(xin is not None)			
-	assert(yin is not None)			
-	assert(xout is not None)			
+
+	assert(xin is not None)
+	assert(yin is not None)
+	assert(xout is not None)
 
 	xinbinsize = binsizes(xin)
 	xinleft = xin - xinbinsize/2.0
 	xinright = xin +xinbinsize/2.0
-	
+
 	xoutbinsize = binsizes(xout)
 	xoutleft = xout - xoutbinsize/2.0
 	xoutright = xout + xoutbinsize/2.0
@@ -123,45 +123,45 @@ def supersample(xin=None, yin=None, xout=None, demo=False, visualize=False, slow
 				inleft = (xinleft <= xoutleft[out]).nonzero()[0].max()
 			except:
 				inleft = 0
-	
-			try:		
+
+			try:
 				inright = (xinright >= xoutright[out]).nonzero()[0].min()
 			except:
 				inright = -1
-		
+
 			leftweight = (np.minimum(xinright[inleft], xoutright[out]) - xoutleft[out])/(xinright[inleft] - xinleft[inleft])
 			rightweight = (xoutright[out] - np.maximum(xinleft[inright],xoutleft[out]))/(xinright[inright] - xinleft[inright])*(inright != inleft)
-		
+
 			yout[out] = (leftweight*yin[inleft] + rightweight*yin[inright])/(leftweight + rightweight)
 			#if renormalize:
 			#	yout[out] *= (0.5*xinbinsize[inleft] + 0.5*xinbinsize[inright])/xoutbinsize[out]
 			#print "{0:4f} to {1:4f} = {2:6f}x{3:6f} + {4:6f}x{5:6f}".format(xoutleft[out], xoutright[out], leftweight, xin[inleft], rightweight, xin[inright])
-		yout[xoutright > xinright.max()] = 0	
-		yout[xoutleft < xinleft.min()] = 0	
+		yout[xoutright > xinright.max()] = 0
+		yout[xoutleft < xinleft.min()] = 0
 	else:
-		
+
 		ones = np.ones((len(xin), len(xout)))
-		
+
 		# set up the input arrays
 		sh = (len(xin),1)
 		matrix_xinleft = ones*xinleft.reshape(sh)
-		matrix_xinright = ones*xinright.reshape(sh)		
-		matrix_xinbinsize = ones*xinbinsize.reshape(sh)		
-		matrix_yin = ones*yin.reshape(sh)		
-		
+		matrix_xinright = ones*xinright.reshape(sh)
+		matrix_xinbinsize = ones*xinbinsize.reshape(sh)
+		matrix_yin = ones*yin.reshape(sh)
+
 		# set up temporary output arrays
 		matrix_xoutleft = xoutleft*ones
 		matrix_xoutright = xoutright*ones
-		
-		mask_left = (matrix_xinleft <= matrix_xoutleft) & (matrix_xinleft + matrix_xinbinsize >= matrix_xoutleft) 
-		mask_right = (matrix_xinleft <= matrix_xoutright) & (matrix_xinleft + matrix_xinbinsize >= matrix_xoutright) 
-		
+
+		mask_left = (matrix_xinleft <= matrix_xoutleft) & (matrix_xinleft + matrix_xinbinsize >= matrix_xoutleft)
+		mask_right = (matrix_xinleft <= matrix_xoutright) & (matrix_xinleft + matrix_xinbinsize >= matrix_xoutright)
+
 		leftweight = (np.minimum(matrix_xinright, matrix_xoutright) - matrix_xoutleft)/matrix_xinbinsize*mask_left
 		rightweight = (matrix_xoutright - np.maximum(matrix_xinleft,matrix_xoutleft))/matrix_xinbinsize*mask_right
 		yout = np.sum((leftweight*matrix_yin+ rightweight*matrix_yin),0)/np.sum(leftweight + rightweight,0)
 
-		
-		
+
+
 	'''ones = np.ones((len(xin), len(xout)))
 	matrix_xout = xout*ones
 	matrix_xoutbin = binsizes(xout)*ones
@@ -182,10 +182,10 @@ def supersample(xin=None, yin=None, xout=None, demo=False, visualize=False, slow
 	print leftweight + rightweight
 
 	#matrix_yout = matrix_yin[0:-1,:]*rightweight[0:-1,:] + matrix_yin[1:None,:]*leftweight[0:-1,:]
-	
+
 	matrix_yout = matrix_yin[0:-1,:]*leftweight[0:-1,:] + matrix_yin[1:None,:]*rightweight[1:None,:]'''
 	#yout = np.sum(matrix_yout, 0)
-	
+
 	if visualize:
 		plt.cla()
 		plot_xin = np.vstack((xinleft,xinright)).reshape((-1,),order='F')
@@ -193,20 +193,20 @@ def supersample(xin=None, yin=None, xout=None, demo=False, visualize=False, slow
 		plt.plot(plot_xin, plot_yin, alpha=0.5, linewidth=3, color='black')
 		badinterpolation = scipy.interpolate.interp1d(xin, yin, kind='linear', bounds_error=False, fill_value=0.0)
 		plt.plot(xout, badinterpolation(xout), color='red', alpha=0.2, linewidth=2)
-		
+
 		plot_xout = np.vstack((xoutleft,xoutright)).reshape((-1,),order='F')
 		plot_yout = np.vstack((yout,yout)).reshape((-1,),order='F')
 		plt.plot(plot_xout, plot_yout, color='orange', alpha=0.7, linewidth=4, markersize=10)
 		plt.plot(xout, yout, color='orange', alpha=0.7, linewidth=0, markersize=20)
 		a = raw_input('okay?')
-	return yout	
-	
+	return yout
+
 def plothistogram( y, nbins=None, binwidth=0.1, ax=plt.gca(), expectation=None, scale='linear', nsigma=5, **kwargs):
-	
+
 	if nbins is not None:
 		binwidth = (np.max(y) - np.min(y))/nbins
-	
-		
+
+
 	if expectation is not None:
 		mean = expectation[0]
 		width = expectation[1]
@@ -216,7 +216,7 @@ def plothistogram( y, nbins=None, binwidth=0.1, ax=plt.gca(), expectation=None, 
 		pad = 3
 		min = np.min(y)-pad*binwidth
 		max = np.max(y)+pad*binwidth
-				
+
 	yhist, edges = np.histogram(y, bins=np.arange(min, max, binwidth))
 	if len(edges) == 1:
 		return
@@ -236,10 +236,10 @@ def plothistogram( y, nbins=None, binwidth=0.1, ax=plt.gca(), expectation=None, 
 			exhist[i] = n*(g.cdf(finish) - g.cdf(start))
 		bottom = np.maximum(exhist - np.sqrt(exhist), 0)/normalization
 		top = (exhist + np.sqrt(exhist))/normalization
-		
+
 		ax.fill_betweenx(xhist, bottom, top, color='gray', alpha=0.5, linewidth=4)
 		ax.plot(top, xhist, color='gray', alpha=0.5, linewidth=4)
-		
+
 	ax.plot(np.maximum(yhist, 0.000001/normalization), xhist,  **kwargs)
 	if scale == 'log':
 		ax.set_xscale('log')
@@ -247,7 +247,7 @@ def plothistogram( y, nbins=None, binwidth=0.1, ax=plt.gca(), expectation=None, 
 	if scale == 'linear':
 		ax.set_xscale('linear')
 		ax.set_xlim(0, 1.1)
-	
+
 	#ax.set_ylim(min, max)
 	#ax.set_xticks([])
 	#ax.set_yticks([])
@@ -258,7 +258,7 @@ def plothistogram( y, nbins=None, binwidth=0.1, ax=plt.gca(), expectation=None, 
 def binnedrms(y):
 	# define a dummy x variable
 	x = np.arange(len(y))
-	
+
 	n = np.arange(1,len(y)/3)
 	rms = np.zeros(len(n))
 	for i in range(len(n)):
@@ -267,12 +267,12 @@ def binnedrms(y):
 		rms[i] = np.std(binned)
 		#print n[i], rms[i]
 	return n, rms
-	
+
 def plotbinnedrms(y, ax=plt.gca(), xunit=1, scale='log', yunits=1, yrange=[50,5000], updateifpossible=True, **kwargs):
 	n, rms = binnedrms(y*yunits)
 	x = xunit*n
 
-	# if the plot is already full, 
+	# if the plot is already full,
 	try:
 		assert(updateifpossible)
 		lines = ax.get_lines()
@@ -281,7 +281,7 @@ def plotbinnedrms(y, ax=plt.gca(), xunit=1, scale='log', yunits=1, yrange=[50,50
 	except:
 		ax.plot(x, rms[0]/np.sqrt(n), linestyle='--', color='black', alpha=0.25, linewidth=3)
 		ax.plot(x, rms, **kwargs)
-		
+
 	if scale == 'log':
 		ax.set_xscale('log')
 		ax.set_yscale('log')
@@ -289,7 +289,7 @@ def plotbinnedrms(y, ax=plt.gca(), xunit=1, scale='log', yunits=1, yrange=[50,50
 		ax.set_xlim(1, np.max(n))
 	else:
 		ax.set_xlim(0, np.max(x)+1)
-		ax.set_ylim(0, np.max(yrange))	
+		ax.set_ylim(0, np.max(yrange))
 
 def acf(y):
 	a = np.correlate(y,y,'full')
@@ -297,7 +297,7 @@ def acf(y):
 	lag = np.arange(len(trimmed))
 	return lag, trimmed/np.correlate(y,y)
 
-		
+
 def plotautocorrelation(y, xunit=1, ax= plt.gca(), max=25,  yrange=[-0.2, 1], **kwargs):
 	lag, auto = acf(y)
 	x = lag*xunit
@@ -308,7 +308,44 @@ def plotautocorrelation(y, xunit=1, ax= plt.gca(), max=25,  yrange=[-0.2, 1], **
 	#except:
 	#	pass
 	ax.plot([0, end -1], [0,0], linestyle='--', color='black', alpha=0.25, linewidth=3)
-	ax.plot(x, auto, **kwargs)		
+	ax.plot(x, auto, **kwargs)
 	ax.set_xlim(-1, end)
 	ax.set_ylim(*yrange)
-	
+
+def binto(x=None, y=None, binwidth=0.01, yuncertainty=None, test=False, robust=False, sem=True):
+	'''Bin a timeseries to a given binwidth, returning both the mean and standard deviation (or median and robust scatter).'''
+
+	if test:
+		n = 1000
+		x, y = np.arange(n), np.random.randn(n) - np.arange(n)*0.01 + 5
+		bx, by, be = binto(x, y, binwidth=20)
+		plt.figure('test of zachopy.binto')
+		plt.cla()
+		plt.plot(x, y, linewidth=0, markersize=4, alpha=0.3, marker='.', color='gray')
+		plt.errorbar(bx, by, be, linewidth=0, elinewidth=2, capthick=2, markersize=10, alpha=0.5, marker='.', color='blue')
+		return
+
+
+	min, max = np.min(x), np.max(x)
+	bins = np.arange(min, max+binwidth, binwidth)
+	count, edges = np.histogram(x, bins=bins)
+	sum, edges = np.histogram(x, bins=bins, weights=y)
+	mean = sum.astype(np.float)/count
+	sumofsquares, edges = np.histogram(x, bins=bins, weights=y**2)
+	std = np.sqrt(sumofsquares.astype(np.float)/count - mean**2)*np.sqrt(count.astype(np.float)/(count-1.0))
+	if sem:
+		error = std/np.sqrt(count)
+	else:
+		error = std
+	x = 0.5*(edges[1:] + edges[:-1])
+	print count
+	print mean
+	print sumofsquares
+	return x, mean, error
+
+
+	if yuncertainty is not None:
+		print "Uh-oh, the yuncertainty feature hasn't be finished yet."
+
+	if robust:
+		print "Hmmm...the robust binning feature isn't finished yet."

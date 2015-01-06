@@ -94,7 +94,7 @@ class ds9(Display):
 
         print self.prefix + 'Uh-oh! Image array seems to have a dimension other than 1, 2, or 3!'
 
-    def one(self, image, clobber=False, regions=None):
+    def one(self, image, clobber=False, regions=None, **options):
         '''Display one image in ds9, with option to empty all grames first.'''
         if clobber:
             self.window.set("frame delete all")
