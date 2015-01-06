@@ -4,6 +4,12 @@ import numpy as np
 import astropy.modeling.models, astropy.modeling.fitting
 import scipy.interpolate, scipy.stats
 
+def mad(x):
+	'''The median absolute deviation from the median, a robust estimator of a distribution's width.
+	For a Gaussian distribution, sigma = 1.48*MAD.'''
+	med = np.median(x)
+	return np.median(np.abs(x - med))
+
 def peaks(x, y, plot=False, threshold=4, maskWidth=10):
 	'''Return the significant peaks in a 1D array.
 
