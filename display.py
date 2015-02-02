@@ -1,28 +1,32 @@
 '''Tools for displaying 2D/3D datasets.'''
 
 from matplotlib import pyplot as plt, numpy as np
+from Talker import Talker
+
 try:
     import ds9 as pyds9
 except:
     print "Uh-oh! zachopy.display is trying to 'import ds9' and can't seem to do it. Please install it (http://hea-www.harvard.edu/RD/pyds9/)."
+
 import regions
 
-class Display(object):
+class Display(Talker):
     '''Display 2D or 3D datasets, using a variety of methods.'''
-    def __init__(self):
-        pass
+    def __init__(self, **kwargs):
+        # decide whether or not this creature is chatty
+        Talker.__init__(self, **kwargs)
 
 class ds9(Display):
     '''Use [ds9](http://hea-www.harvard.edu/saord/ds9/) to display one or many images in an array.'''
-    def __init__(self,name='general'):
+    def __init__(self,name='general', **kwargs):
+        Display.__init__(self, **kwargs)
         self.name = name.replace(' ','_')
-        self.prefix = '[ds9] '
         try:
             wait = 10
-            print self.prefix + 'trying to open a new ds9 window called "{0}"\n     (will wait up to {1:.0f} seconds)'.format(self.name, wait)
+            self.speak( 'trying to open a new ds9 window called "{0}"\n     (will wait up to {1:.0f} seconds)'.format(self.name, wait))
             self.window = pyds9.ds9(self.name,start=True,wait=wait,verify=True)
         except:
-            print self.prefix + 'failed!'.format(self.name)
+            self.speak('failed!'.format(self.name))
 
     def match(self, what=['frame image', 'scale', 'colorbar']):
         '''Make all the frames match the current one.'''
@@ -83,7 +87,7 @@ class ds9(Display):
 
             # only display up to a certain number of images
             if images.shape[-1] > limit:
-                print self.prefix + "going to display only {0:.0f} images, for impatience's sake".format(limit)
+                self.speak("going to display only {0:.0f} images, for impatience's sake".format(limit))
 
             # display all the images
             for i in range(np.minimum(images.shape[depth], limit)):
@@ -92,9 +96,9 @@ class ds9(Display):
                 self.applyOptionsToFrame(**options)
             return
 
-        print self.prefix + 'Uh-oh! Image array seems to have a dimension other than 1, 2, or 3!'
+        self.speak('Uh-oh! Image array seems to have a dimension other than 1, 2, or 3!')
 
-    def one(self, image, clobber=False, regions=None):
+    def one(self, image, clobber=False, regions=None, **options):
         '''Display one image in ds9, with option to empty all grames first.'''
         if clobber:
             self.window.set("frame delete all")

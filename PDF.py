@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec
-from zachopy.transit.Parameter import Parameter
+from transit.Parameter import Parameter
 
 class PDF(object):
 	def __init__(self, parameters=None, covariance=None, samples=None):

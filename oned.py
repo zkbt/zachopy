@@ -10,6 +10,45 @@ def mad(x):
 	med = np.median(x)
 	return np.median(np.abs(x - med))
 
+def binto(x=None, y=None, binwidth=0.01, yuncertainty=None, test=False, robust=False, sem=True):
+	'''Bin a timeseries to a given binwidth, returning both the mean and standard deviation (or median and robust scatter).'''
+
+	if test:
+		n = 1000
+		x, y = np.arange(n), np.random.randn(n) - np.arange(n)*0.01 + 5
+		bx, by, be = binto(x, y, binwidth=20)
+		plt.figure('test of zachopy.binto')
+		plt.cla()
+		plt.plot(x, y, linewidth=0, markersize=4, alpha=0.3, marker='.', color='gray')
+		plt.errorbar(bx, by, be, linewidth=0, elinewidth=2, capthick=2, markersize=10, alpha=0.5, marker='.', color='blue')
+		return
+
+
+	min, max = np.min(x), np.max(x)
+	bins = np.arange(min, max+binwidth, binwidth)
+	count, edges = np.histogram(x, bins=bins)
+	sum, edges = np.histogram(x, bins=bins, weights=y)
+	mean = sum.astype(np.float)/count
+	sumofsquares, edges = np.histogram(x, bins=bins, weights=y**2)
+	std = np.sqrt(sumofsquares.astype(np.float)/count - mean**2)*np.sqrt(count.astype(np.float)/(count-1.0))
+	if sem:
+		error = std/np.sqrt(count)
+	else:
+		error = std
+	x = 0.5*(edges[1:] + edges[:-1])
+	#print count
+	#print mean
+	#print sumofsquares
+	return x, mean, error
+
+
+	if yuncertainty is not None:
+		print "Uh-oh, the yuncertainty feature hasn't be finished yet."
+
+	if robust:
+		print "Hmmm...the robust binning feature isn't finished yet."
+
+
 def peaks(x, y, plot=False, threshold=4, maskWidth=10):
 	'''Return the significant peaks in a 1D array.
 
@@ -317,3 +356,60 @@ def plotautocorrelation(y, xunit=1, ax= plt.gca(), max=25,  yrange=[-0.2, 1], **
 	ax.plot(x, auto, **kwargs)
 	ax.set_xlim(-1, end)
 	ax.set_ylim(*yrange)
+
+def ccf(f, g, scale=1.0):
+	'''Calculate the normalized cross-correlation function of two identically-size arrays.
+
+		[required]:
+		f = an N-element array (for example, spectrum of target star)
+		g = an N-element array (for example, spectrum of template star)
+		scale = a scalar indicating what the indices of f and g (one unit of "lag") correspond to
+
+		'''
+
+	# how long are our arrays
+	N = len(f)
+
+	# define the x-axis, if not supplied
+	assert(len(f) == len(g))
+	x = np.arange(-N+1, N, 1.0)*scale
+
+	# calculation the normalized cross-correlation function
+	sigma_f = np.sqrt(np.sum(f**2)/N)
+	sigma_g = np.sqrt(np.sum(g**2)/N)
+	C_fg = np.correlate(f, g, 'full')/N/sigma_f/sigma_g
+
+	# WILL THIS WORK?
+	return scipy.interpolate.interp1d(x,C_fg, fill_value=0.0, bounds_error=False)
+
+def todcor(f, g1, g2, scale=1.0, luminosity_ratio=None):
+	'''Calculate the 2D correlation of a 1D array with two template arrays.'''
+
+	assert(len(f) == len(g1))
+	assert(len(f) == len(g2))
+
+	C_1 = ccf(f, g1, scale=scale)
+	C_2 = ccf(f, g2, scale=scale)
+	C_12 = ccf(g1, g2, scale=scale)
+
+	N = len(f)
+	sigma_g1 = np.sqrt(np.sum(g1**2)/N)
+	sigma_g2 = np.sqrt(np.sum(g2**2)/N)
+
+	def bestalphaprime(s1, s2):
+		return sigma_g1/sigma_g2*(C_1(s1)*C_12(s2 - s1) - C_2(s2))/(C_2(s2)*C_12(s2-s1) - C_1(s1))
+
+	def R(s1, s2):
+		#a =
+		if luminosity_ratio is None:
+			a = np.maximum(np.minimum(bestalphaprime(s1,s2), sigma_g2/sigma_g1), 0.0)
+			flexiblecorrelation = (C_1(s1) + a*C_2(s2))/np.sqrt(1.0 + 2*a*C_12(s2 - s1) + a**2)
+			ok = np.isfinite(a)
+			peak = np.argmax(flexiblecorrelation[ok].flatten())
+			a = a[ok].flatten()[peak]
+		else:
+			a = luminosity_ratio*sigma_g2/sigma_g1
+		print "alpha spans", np.min(a), np.max(a)
+		return  (C_1(s1) + a*C_2(s2))/np.sqrt(1.0 + 2*a*C_12(s2 - s1) + a**2), a*sigma_g1/sigma_g2
+
+	return R

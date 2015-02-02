@@ -49,7 +49,7 @@ def rebin_total(a, *args):
 
 #swiped from stack overflow
 def find_nearest(array,value,verbose=False):
-    idx = (np.abs(array-value)).argmin()
+    idx = (np.abs(np.array(array)-value)).argmin()
     if verbose:
     	print "{0} --> {1}".format(value, array[idx])
     return array[idx]
@@ -58,16 +58,43 @@ def find_nearest(array,value,verbose=False):
 # modified from above
 def find_two_nearest(array,value,verbose=False):
 	# assumes ordered arrays and that value falls between the min and max of the array
-	offset = array-value
-	idx = (np.abs(offset)).argmin()
+	offset = value - np.array(array)
+	signs = np.sign(offset)
 
-	if np.sign(offset[idx]) == -1*np.sign(offset[idx-1]):
-		nearest =  [array[idx-1], array[idx]]
+	# handle 1-element arrays
+	if len(array) == 1:
+		return [array[0], array[0]]
+
+
+	if (signs == -1).all() | (signs == 1).all():
+		# value is below the minimum of the array
+		m = np.argmin(np.abs(offset))
+		left, right = m, m
 	else:
-	   	nearest =  [array[idx], array[idx+1]]
+		# the value is somewhere in the bounds between the array's min and max
+		left = (signs[1:] - signs[0:-1]).nonzero()[0][0]
+		right = left + 1
+
+	nearest = [array[left], array[right]]
+
 	if verbose:
-		print "{0} is between {1} and {2}".format(value, nearest[0], nearest[1])
+		print
+		for k in locals().keys():
+			print '{0:>10} = {1}'.format(k, locals()[k])
+		print
 	return nearest
+
+def interpolation_weights(bounds, value, verbose=True):
+
+	if bounds[0] == bounds[1]:
+		return 1.0, 0.0
+	assert((value >= np.min(bounds)) * (value <= np.max(bounds)))
+	span = np.float(bounds[1] - bounds[0])
+	weights = [(bounds[1] - value)/span, (value - bounds[0])/span]
+	return weights
+
+
+
 
 def truncate(str, n=12, etc=' ...'):
 	if len(str) > n:
