@@ -47,7 +47,6 @@ class ds9(Display):
         self.window.set("rgb red")
         self.applyOptionsToFrame(**options)
 
-
     def applyOptionsToFrame(self, **options):
         try:
             self.showRegions(options['regions'])
@@ -105,6 +104,22 @@ class ds9(Display):
         self.window.set("frame new")
         self.window.set_np2arr(image.astype(np.float))
         self.applyOptionsToFrame(**options)
+
+    def scale(self, scale=None, limits=None, mode=None ):
+        '''Update the scale of the image.
+
+            scale [linear|log|pow|sqrt|squared|asinh|sinh|histequ]
+            [limits <minvalue> <maxvalue>]
+            [mode minmax|<value>|zscale|zmax]
+        '''
+        if scale is not None:
+            self.window.set('scale {0}'.format(scale))
+        if mode is not None:
+            self.window.set('scale mode {0}'.format(mode))
+        if limits is not None:
+            self.window.set('scale limits {0} {1}'.format(limits[0], limits[1]))
+
+
 
 
     def replace(self, image, i):

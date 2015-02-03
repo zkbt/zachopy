@@ -451,4 +451,3 @@ def binto(x=None, y=None, binwidth=0.01, yuncertainty=None, test=False, robust=F
 
 	if robust:
 		print "Hmmm...the robust binning feature isn't finished yet."
->>>>>>> 3ef524c969cd0c3e97f3e93c59f1a853f862de7b

@@ -16,5 +16,5 @@ def stack(cube, axis=0, threshold=5.0):
 
     med = np.median(cube, axis=axis).reshape(shape)
     noise = scatter(cube, axis=axis).reshape(shape)
-    good = np.abs(cube - med) < threshold*noise
+    good = (np.abs(cube - med) < threshold*noise) | (noise == 0)
     return np.sum(good*cube, axis=axis)/np.sum(good, axis=axis)
