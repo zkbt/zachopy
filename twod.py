@@ -9,6 +9,7 @@ def scatter(cube, axis=0):
     mad = np.median(np.abs(cube - med.reshape(shape)), axis=axis)
     return 1.48*mad
 
+
 def stack(cube, axis=0, threshold=5.0):
     '''Combine a cube of images into one mean image, using a MAD noise estimator to reject outliers.'''
     shape = np.array(cube.shape)
@@ -17,4 +18,6 @@ def stack(cube, axis=0, threshold=5.0):
     med = np.median(cube, axis=axis).reshape(shape)
     noise = scatter(cube, axis=axis).reshape(shape)
     good = (np.abs(cube - med) < threshold*noise) | (noise == 0)
-    return np.sum(good*cube, axis=axis)/np.sum(good, axis=axis)
+    mean = np.sum(good*cube, axis=axis)/np.sum(good, axis=axis)
+
+    return mean, noise.squeeze()
