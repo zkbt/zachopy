@@ -248,7 +248,7 @@ class ds9(Display):
         for w in what:
             self.window.set('match {0}'.format(w))
 
-    def rgb(self, r, g, b, clobber=True, regions=None):
+    def rgb(self, r, g, b, clobber=True, regions=None, **options):
         '''Display three images as RGB in ds9.'''
         if clobber:
           self.window.set("frame delete all")
@@ -305,8 +305,7 @@ class ds9(Display):
 
             # display all the images
             for i in range(np.minimum(images.shape[depth], limit)):
-                self.window.set("frame {0}".format(i))
-                self.window.set_np2arr(images.take(i,axis=depth).astype(np.float))
+                self.replace(images.take(i,axis=depth).astype(np.float), i)
                 self.applyOptionsToFrame(**options)
             return
 
@@ -347,6 +346,7 @@ class ds9(Display):
         '''Replace the image in the a specific ds9 frame with a new one.'''
         self.window.set("frame {0}".format(i+1))
         self.window.set_np2arr(image.astype(np.float).squeeze())
+        self.frame = i+1
 
     def update(self, image, clobber=False):
         '''Update the image in this frame with an updated one.'''

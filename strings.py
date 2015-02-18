@@ -6,14 +6,16 @@ possiblescales = dict(degrees=360.0/24.0, radians=360.0/24.0)
 def format(delimiter='letters'):
     if delimiter == 'letters':
         return "{rah:02d}h{ram:02d}m{ras:05.2f}s{sign:1}{decd:02d}d{decm:02d}m{decs:05.2f}s"
+    if delimiter == ':':
+        return "{rah:02d}:{ram:02d}:{ras:05.2f} {sign:1}{decd:02d}:{decm:02d}:{decs:05.2f}"
 
-def test(n=100000, verbose=False):
+def test(n=100000, verbose=False, delimiter=':'):
     '''Test the conversion between decimals and strings, by generating lots of random positions.'''
     for i in range(n):
         ra, dec = np.random.uniform(0.0, 360.0), np.random.uniform(-90,90)
-        s = clockify(ra, dec)
+        s = clockify(ra, dec, delimiter=delimiter)
         nra, ndec = unclockify(s)
-        r = clockify(nra, ndec)
+        r = clockify(nra, ndec, delimiter=':')
         if verbose:
             print
             print "performing random test #{0}".format(i)
@@ -35,16 +37,20 @@ def test(n=100000, verbose=False):
 def unclockify(s, delimiter='letters'):
     '''Convert a positional string to decimal RA and Dec values (in degrees).'''
 
-    d = parse.parse(format(delimiter), s)
-    ra = 15.0*(d['rah'] + d['ram']/60.0 + d['ras']/3600.0)
-    dec = np.int(d['sign']+'1')*(d['decd'] + d['decm']/60.0 + d['decs']/3600.0)
+    if 'h' in s:
+        delimiter='letters'
+    if ':' in s:
+        delimiter=':'
+
+    d = parse.parse(format(delimiter).replace('{decs:05.2f}', '{decs}' ).replace('{ras:05.2f} ', '{ras} ' ), s)
+    ra = 15.0*(d['rah'] + d['ram']/60.0 + np.float(d['ras'])/3600.0)
+    dec = np.int(d['sign']+'1')*(d['decd'] + d['decm']/60.0 + np.float(d['decs'])/3600.0)
 
     return ra, dec
 
 def clockify(ra, dec, delimiter='letters'):
     '''Convert an RA and Dec position (in degrees) to a positional string.'''
 
-    f = format(delimiter)
 
     # calculate the RA
     rah = np.floor(ra/15.0).astype(np.int)
