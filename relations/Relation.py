@@ -11,7 +11,7 @@ class Relation(Talker):
         '''Initialize a Relation object.'''
 
         # decide if it should be chatty
-        Talker.__init__(self, **kwargs)
+        Talker.__init__(self, pithy=True, **kwargs)
 
         # store the data filename
 

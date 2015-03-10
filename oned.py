@@ -288,17 +288,19 @@ def plothistogram( y, nbins=None, binwidth=0.1, ax=plt.gca(), expectation=None, 
 	ax.plot(np.maximum(yhist, 0.000001/normalization), xhist,  **kwargs)
 	if scale == 'log':
 		ax.set_xscale('log')
-		ax.set_xlim(0.9/normalization, 1.5)
+		ax.set_xlim(0.9/normalization,  np.max(exhist/normalization)*1.3)
 	if scale == 'linear':
 		ax.set_xscale('linear')
-		ax.set_xlim(0, 1.1)
+		ax.set_xlim(0, np.max(exhist/normalization)*1.3)
 
 	#ax.set_ylim(min, max)
 	#ax.set_xticks([])
 	#ax.set_yticks([])
-	print xhist
-	print yhist
-	print exhist/normalization
+	#print "HISTOGRAMMING!"
+	#print xhist
+	#print yhist
+	#print exhist/normalization
+	#assert(False)
 
 def binnedrms(y):
 	# define a dummy x variable

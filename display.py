@@ -26,7 +26,7 @@ class Movie(Display):
         Display.__init__(self, **kwargs)
 
 
-    def fromFITSfiles(self, pattern, directory=None, stride=1, **kwargs):
+    def fromFITSfiles(self, pattern, directory=None, stride=1, bitrate=1800*5, fps=30, **kwargs):
 
         # load the filenames to include
         self.filenames = glob.glob(pattern)[::stride]
@@ -44,7 +44,7 @@ class Movie(Display):
 
         # initialize the animator
         metadata = dict(title=self.frame.name, artist='Z.K.B.-T.')
-        self.writer = animation.FFMpegWriter(fps=30, metadata=metadata, bitrate=1800*5)
+        self.writer = animation.FFMpegWriter(fps=fps, metadata=metadata, bitrate=bitrate)
         print directory + '/' + self.frame.label + '.mp4'
         with self.writer.saving(self.frame.figure, directory + '/' + self.frame.label + '.mp4', self.frame.figure.get_dpi()):
             # loop over exposures
