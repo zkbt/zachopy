@@ -2,7 +2,7 @@
 import numpy as np
 import astropy.coordinates
 import astropy.units
-import astroquery.simbad
+from astroquery.simbad import Simbad
 
 class Star(object):
 	def __init__(self):
@@ -19,12 +19,12 @@ class SingleStar(Star):
 
 	def simbad(self, name, pmra=None, pmdec=None):
 		containswildcard = "*" in name or "?" in name or "[" in name or "]" in name
-		astroquery.simbad.Simbad.reset_votable_fields()
-		astroquery.simbad.Simbad.add_votable_fields('pm')
-		astroquery.simbad.Simbad.add_votable_fields('sptype')
-		astroquery.simbad.Simbad.add_votable_fields('flux(V)')
-		astroquery.simbad.Simbad.add_votable_fields('flux(K)')
-		self.table = astroquery.simbad.Simbad.query_object(name)
+		Simbad.reset_votable_fields()
+		Simbad.add_votable_fields('pm')
+		Simbad.add_votable_fields('sptype')
+		Simbad.add_votable_fields('flux(V)')
+		Simbad.add_votable_fields('flux(K)')
+		self.table = Simbad.query_object(name)
 
 
 		self.name = self.table['MAIN_ID']
