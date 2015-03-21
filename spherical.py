@@ -17,5 +17,7 @@ def rotate(ra, dec, x, y):
   #print ' --> '
   #print rotated
   sphe = np.array(astropy.coordinates.cartesian_to_spherical(rotated[0], rotated[1], rotated[2]))*180/np.pi
-  #print "      {0:f}, {1:f} --> {2:f},{3:f}".format(ra, dec, sphe[2], sphe[1])
+  sphe = sphe.squeeze()
+
+  print "      {0:f}, {1:f} --> {2:f},{3:f}".format(ra, dec, sphe[2], sphe[1])
   return sphe[2], sphe[1]
