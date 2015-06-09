@@ -49,7 +49,7 @@ class SingleStar(Star):
 
 	def now(self, epoch=None):
 		if epoch is None:
-			epoch = 2014.75
+			epoch = 2015.4
 		self.setEpoch(epoch)
 		print self.posstring(coord=self.icrs, epoch=2000.0)
 		print " with d(RA)={pmra}, d(Dec)={pmdec} mas of proper motion".format(pmra=self.pmra, pmdec=self.pmdec)

@@ -10,7 +10,7 @@ def mad(x):
 	med = np.median(x)
 	return np.median(np.abs(x - med))
 
-def binto(x=None, y=None, binwidth=0.01, yuncertainty=None, test=False, robust=False, sem=True):
+def binto(x=None, y=None, binwidth=0.01, yuncertainty=None, test=False, robust=True, sem=True):
 	'''Bin a timeseries to a given binwidth, returning both the mean and standard deviation (or median and robust scatter).'''
 
 	if test:
@@ -28,9 +28,18 @@ def binto(x=None, y=None, binwidth=0.01, yuncertainty=None, test=False, robust=F
 	bins = np.arange(min, max+binwidth, binwidth)
 	count, edges = np.histogram(x, bins=bins)
 	sum, edges = np.histogram(x, bins=bins, weights=y)
-	mean = sum.astype(np.float)/count
-	sumofsquares, edges = np.histogram(x, bins=bins, weights=y**2)
-	std = np.sqrt(sumofsquares.astype(np.float)/count - mean**2)*np.sqrt(count.astype(np.float)/(count-1.0))
+
+	if robust:
+		n= len(sum)
+		mean, std = np.zeros(n) + np.nan, np.zeros(n) + np.nan
+		for i in range(n):
+			inbin = (x>edges[i])*(x<=edges[i+1])
+			mean[i] = np.median(y[inbin])
+			std[i] = mad(y[inbin])
+	else:
+		mean = sum.astype(np.float)/count
+		sumofsquares, edges = np.histogram(x, bins=bins, weights=y**2)
+		std = np.sqrt(sumofsquares.astype(np.float)/count - mean**2)*np.sqrt(count.astype(np.float)/(count-1.0))
 	if sem:
 		error = std/np.sqrt(count)
 	else:
@@ -415,41 +424,3 @@ def todcor(f, g1, g2, scale=1.0, luminosity_ratio=None):
 		return  (C_1(s1) + a*C_2(s2))/np.sqrt(1.0 + 2*a*C_12(s2 - s1) + a**2), a*sigma_g1/sigma_g2
 
 	return R
-
-def binto(x=None, y=None, binwidth=0.01, yuncertainty=None, test=False, robust=False, sem=True):
-	'''Bin a timeseries to a given binwidth, returning both the mean and standard deviation (or median and robust scatter).'''
-
-	if test:
-		n = 1000
-		x, y = np.arange(n), np.random.randn(n) - np.arange(n)*0.01 + 5
-		bx, by, be = binto(x, y, binwidth=20)
-		plt.figure('test of zachopy.binto')
-		plt.cla()
-		plt.plot(x, y, linewidth=0, markersize=4, alpha=0.3, marker='.', color='gray')
-		plt.errorbar(bx, by, be, linewidth=0, elinewidth=2, capthick=2, markersize=10, alpha=0.5, marker='.', color='blue')
-		return
-
-
-	min, max = np.min(x), np.max(x)
-	bins = np.arange(min, max+binwidth, binwidth)
-	count, edges = np.histogram(x, bins=bins)
-	sum, edges = np.histogram(x, bins=bins, weights=y)
-	mean = sum.astype(np.float)/count
-	sumofsquares, edges = np.histogram(x, bins=bins, weights=y**2)
-	std = np.sqrt(sumofsquares.astype(np.float)/count - mean**2)*np.sqrt(count.astype(np.float)/(count-1.0))
-	if sem:
-		error = std/np.sqrt(count)
-	else:
-		error = std
-	x = 0.5*(edges[1:] + edges[:-1])
-	print count
-	print mean
-	print sumofsquares
-	return x, mean, error
-
-
-	if yuncertainty is not None:
-		print "Uh-oh, the yuncertainty feature hasn't be finished yet."
-
-	if robust:
-		print "Hmmm...the robust binning feature isn't finished yet."

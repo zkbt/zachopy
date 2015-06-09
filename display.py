@@ -6,6 +6,7 @@ import glob
 import astropy.io.fits
 import zachopy.utils
 from Talker import Talker
+import os
 
 try:
     import ds9 as pyds9
@@ -25,6 +26,27 @@ class Movie(Display):
     def __init__(self, **kwargs):
         Display.__init__(self, **kwargs)
 
+    def fromPDFs(self, pattern, directory=None, stride=1, bitrate=1800*10, fps=30, **kwargs):
+
+        # load the filenames to include
+        self.filenames = glob.glob(pattern)[::stride]
+
+        # make sure the output directory exists
+        if directory is None:
+            directory = 'movie/'
+
+        zachopy.utils.mkdir(directory)
+
+        for i in range(len(self.filenames)):
+            input = self.filenames[i]
+            png = directory + 'formovie_{0:05.0f}.png'.format(i)#input.replace('/', '_').replace('.pdf', '.png')
+            command =  'convert -density 100 {input} {png}'.format(**locals())
+            print command
+            os.system(command)
+
+        moviecommand = 'convert -delay 10 {directory}*.png  movie.mp4'.format(**locals())
+        print moviecommand
+        os.system(moviecommand)
 
     def fromFITSfiles(self, pattern, directory=None, stride=1, bitrate=1800*5, fps=30, **kwargs):
 

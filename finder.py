@@ -18,26 +18,30 @@ class Camera(object):
 		self.instruments = {}
 		self.instruments['LDSS3C'] ={'size':6.0, 'inflate':1.3}
 		self.instruments['CHIRON'] ={'size':3.0, 'inflate':1.8}
+		self.instruments['PISCO'] ={'size':9.0, 'inflate':1.8}
 		self.setup(name)
-		
+
 	def setup(self, name):
 		for k in self.instruments[name].keys():
 			self.__dict__[k] = self.instruments[name][k]
-		
+
 
 class Finder(object):
-	def __init__(self,name='', ra=None, dec=None, all=False, instrument='CHIRON', pmra=None, pmdec=None):
+	def __init__(self,name='', ra=None, dec=None, all=False, instrument='CHIRON', pmra=None, pmdec=None, star=None):
 		self.name = name
-		self.star = zachopy.star.SingleStar(name, pmra=pmra, pmdec=pmdec)
+		if star is None:
+			self.star = zachopy.star.SingleStar(name, pmra=pmra, pmdec=pmdec)
+		else:
+			self.star = star
 		self.ra, self.dec, self.epoch = self.star.now()
-		self.coord = self.star.current		
-		
+		self.coord = self.star.current
+
 		self.camera = Camera(instrument)
 		self.coordstring = "{0} {1}".format(self.ra, self.dec)
 		for letter in 'hmdm':
 			self.coordstring = self.coordstring.replace(letter, ':')
 		self.coordstring = self.coordstring.replace('s', '')
-		
+
 		self.w = ds9()
 		self.w.set("frame delete all")
 		self.size = self.camera.size
@@ -50,7 +54,7 @@ class Finder(object):
 		self.addImage('poss2ukstu_red')
 		#except:
 		#	print "poss2 failed"
-			
+
 		xpixels = self.w.get('''fits header keyword "'NAXIS1'" ''')
 		ypixels = self.w.get('''fits header keyword "'NAXIS1'" ''')
 		scale = np.maximum(int(xpixels), 1000)/float(xpixels)
@@ -59,14 +63,14 @@ class Finder(object):
 
 		self.w.set("tile mode column")
 		self.w.set("tile yes")
-		
+
 		self.w.set("single")
 		self.w.set("zoom to fit")
 		self.w.set("match frame wcs")
 		print "saveimage " + finderdir + self.name.replace(' ', '') + ".png"
 		self.w.set("saveimage " + finderdir + self.name.replace(' ', '') + ".png")
 
-		
+
 	def addImage(self, survey='poss1_red'):
 		self.w.set("frame new")
 		self.w.set('single')
@@ -79,7 +83,7 @@ class Finder(object):
 
 
 		imageepoch = float(self.w.get('''fits header keyword "'DATE-OBS'" ''').split('-')[0])
-		
+
 		old = self.star.atEpoch(imageepoch)
 		p = self.star.posstring
 		print p(old,imageepoch)
