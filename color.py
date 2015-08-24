@@ -4,6 +4,12 @@ import colormath.color_conversions
 import matplotlib.pyplot as plt
 import numpy as np
 
+import matplotlib.colors as co
+
+def name2color(name):
+    """Return the 3-element RGB array of a given color name."""
+    return co.hex2color(co.cnames[name].lower())
+
 
 def nm2rgb(inputnm, intensity=1.0):
 	'''Convert a wavelength (or uniform range of wavelengths) into RGB colors usable by Python.'''

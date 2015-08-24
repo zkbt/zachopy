@@ -23,7 +23,7 @@ arcsec = arcmin/60.0
 cm = 1.0
 m = 100.0*cm
 km = 1000.0*m
-Rsun = 696000*km
+Rsun = 695660*km
 Rearth = 6378.1366*km
 Rjupiter = 71492*km
 au = 149597870700.0*m
@@ -39,10 +39,18 @@ Mjupiter = Msun/1.047348644e03
 Mearth = Msun/332946.0487
 mp = 1.66053892e-27*kg
 
+# energy
+erg = g*cm**2/second**2 # (should be 1!)
+Joule = 1e7*erg
+
+# power
+
 
 # temperatures
 K = 1.0
-k = 1.3806488e-23*m**2*kg/second**2/K
+Tsun = 5771.8 # Mamajek
+k_B = 1.3806488e-23*m**2*kg/second**2/K
+sigma_SB = 5.6704e-5*erg/cm**2/second/K**4
 
 # other
 G = 6.67428e-11*m**3/kg/second**2

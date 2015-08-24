@@ -10,7 +10,7 @@ def mad(x):
 	med = np.median(x)
 	return np.median(np.abs(x - med))
 
-def binto(x=None, y=None, binwidth=0.01, yuncertainty=None, test=False, robust=True, sem=True):
+def binto(x=None, y=None, binwidth=0.01, yuncertainty=None, test=False, robust=True, sem=True, verbose=False):
 	'''Bin a timeseries to a given binwidth, returning both the mean and standard deviation (or median and robust scatter).'''
 
 	if test:
@@ -29,21 +29,36 @@ def binto(x=None, y=None, binwidth=0.01, yuncertainty=None, test=False, robust=T
 	count, edges = np.histogram(x, bins=bins)
 	sum, edges = np.histogram(x, bins=bins, weights=y)
 
-	if robust:
-		n= len(sum)
-		mean, std = np.zeros(n) + np.nan, np.zeros(n) + np.nan
-		for i in range(n):
-			inbin = (x>edges[i])*(x<=edges[i+1])
-			mean[i] = np.median(y[inbin])
-			std[i] = mad(y[inbin])
-	else:
-		mean = sum.astype(np.float)/count
-		sumofsquares, edges = np.histogram(x, bins=bins, weights=y**2)
-		std = np.sqrt(sumofsquares.astype(np.float)/count - mean**2)*np.sqrt(count.astype(np.float)/(count-1.0))
-	if sem:
-		error = std/np.sqrt(count)
-	else:
+	if yuncertainty is not None:
+		count, edges = np.histogram(x, bins=bins)
+		numerator, edges = np.histogram(x, bins=bins, weights=y/yuncertainty**2)
+		denominator, edges = np.histogram(x, bins=bins, weights=1.0/yuncertainty**2)
+		mean = numerator/denominator
+		std = np.sqrt(1.0/denominator)
 		error = std
+		if verbose:
+			for i in range(len(bins)-1):
+				print bins[i], mean[i], error[i], count[i]
+			a = raw_input('???')
+	else:
+		if robust:
+			n= len(sum)
+			mean, std = np.zeros(n) + np.nan, np.zeros(n) + np.nan
+			for i in range(n):
+				inbin = (x>edges[i])*(x<=edges[i+1])
+				mean[i] = np.median(y[inbin])
+				std[i] = mad(y[inbin])
+		else:
+			if yuncertainty is None:
+				mean = sum.astype(np.float)/count
+				sumofsquares, edges = np.histogram(x, bins=bins, weights=y**2)
+				std = np.sqrt(sumofsquares.astype(np.float)/count - mean**2)*np.sqrt(count.astype(np.float)/np.maximum(count-1.0, 1.0))
+		if sem:
+			error = std/np.sqrt(count)
+		else:
+			error = std
+
+
 	x = 0.5*(edges[1:] + edges[:-1])
 	#print count
 	#print mean
