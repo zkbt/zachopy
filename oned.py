@@ -36,7 +36,7 @@ def binto(x=None, y=None, binwidth=0.01, yuncertainty=None, test=False, robust=T
 		mean = numerator/denominator
 		std = np.sqrt(1.0/denominator)
 		error = std
-		if verbose:
+		if False:
 			for i in range(len(bins)-1):
 				print bins[i], mean[i], error[i], count[i]
 			a = raw_input('???')
