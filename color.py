@@ -37,13 +37,13 @@ def monochromaticdemo():
 	colors = [nm2rgb(c) for c in x]
 	plt.ion()
 
-	plt.cla()
 	fi, ax = plt.subplots(2,1, sharex=True)
 	ax[0].plot(x, [c[0] for c in colors], color='red')
 	ax[0].plot(x, [c[1] for c in colors], color='green')
 	ax[0].plot(x, [c[2] for c in colors], color='blue')
 	ax[1].scatter(x, np.random.normal(0,1,n), color= colors, s=100)
 	ax[1].set_xlim(min(x), max(x))
+	ax[1].set_xlabel('Wavelength (nm)')
 
 def broadbanddemo(width=50):
 	'''Test of nm2rgb, for a range of wavelengths.'''

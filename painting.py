@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt, numpy as np
 
 def ink_errorbar(x, y, yerr=None, xerr=None,
                 colors=None, grayscale=False, alpha=1.0, zorder=0, **kwargs):
-
     # populate the plotting keywrods
     kw = {}
     for k in kwargs.keys():
@@ -12,11 +11,14 @@ def ink_errorbar(x, y, yerr=None, xerr=None,
     for i in range(len(x)):
 
         # pick this data point's color
-        color = colors[i] + 0.0
+        color = np.array(colors[i]) + 0.0
         assert(len(color) == 4)
 
         # make more transparent, if alpha is <1
-        color[-1] *= alpha
+        try:
+            color[-1] *= alpha[i]
+        except TypeError:
+            color[-1] *= alpha
 
         # convert to grayscale, if desired
         if grayscale:
@@ -28,10 +30,13 @@ def ink_errorbar(x, y, yerr=None, xerr=None,
         kw['markeredgecolor'] = color
         kw['markerfacecolor'] = color
 
-        if len(zorder) == len(x):
+        try:
+            assert(len(zorder) > 1)
+            assert(len(zorder) == len(x))
             kw['zorder'] = zorder[i]
-        else:
+        except:
             kw['zorder'] = zorder
+
         # reshape the errors as needed (for asymmetric errors)
         if yerr is not None:
             if len(yerr.shape) == 1:
@@ -50,7 +55,7 @@ def ink_errorbar(x, y, yerr=None, xerr=None,
             xerrtoplot = None
 
 
-        print x[i], y[i], xerrtoplot, yerrtoplot
-        print xerrtoplot.shape, yerrtoplot.shape
+        #print x[i], y[i], xerrtoplot, yerrtoplot
+        #print xerrtoplot.shape, yerrtoplot.shape
         # plot the point
         plt.errorbar(x[i], y[i], xerr=xerrtoplot, yerr=yerrtoplot, **kw)
