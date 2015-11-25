@@ -47,7 +47,7 @@ def binto(x=None, y=None, binwidth=0.01, yuncertainty=None, test=False, robust=T
 			for i in range(n):
 				inbin = (x>edges[i])*(x<=edges[i+1])
 				mean[i] = np.median(y[inbin])
-				std[i] = mad(y[inbin])
+				std[i] = 1.48*mad(y[inbin])
 		else:
 			if yuncertainty is None:
 				mean = sum.astype(np.float)/count
