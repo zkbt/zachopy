@@ -9,9 +9,9 @@ from Talker import Talker
 import os
 
 try:
-    import ds9 as pyds9
-except:
-    print "Uh-oh! zachopy.display is trying to 'import ds9' and can't seem to do it. Please install it (http://hea-www.harvard.edu/RD/pyds9/)."
+    import pyds9
+except ImportError:
+    print "Uh-oh! zachopy.display is trying to 'import pyds9' and can't seem to do it. Please install it (http://hea-www.harvard.edu/RD/pyds9/)."
 
 import regions
 

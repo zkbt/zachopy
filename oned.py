@@ -1,6 +1,7 @@
 '''Tools for dealing with 1D arrays, particularly timeseries and spectra.'''
 import matplotlib.pyplot as plt
 import numpy as np
+np.seterr(divide='ignore')
 import astropy.modeling.models, astropy.modeling.fitting
 import scipy.interpolate, scipy.stats
 

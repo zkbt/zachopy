@@ -22,6 +22,7 @@ arcsec = arcmin/60.0
 # distances
 cm = 1.0
 m = 100.0*cm
+nm = 1e-9*m
 km = 1000.0*m
 Rsun = 695660*km
 Rearth = 6378.1366*km
