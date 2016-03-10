@@ -103,7 +103,10 @@ class Star(object):
 
 		# pull out the official Simbad name
 		self.name = name
-		self.simbadname = self.table['MAIN_ID']
+		self.simbadname = self.table['MAIN_ID'].data[0]
+		if len(self.simbadname) < len(self.name):
+			print "renaming {1} to {0}".format(self.simbadname, self.name)
+			self.name = self.simbadname
 
 		ra = self.table['RA'].data[0]
 		dec = self.table['DEC'].data[0]
@@ -120,7 +123,7 @@ class Star(object):
 		self.attributes['comment'] = self.table['SP_TYPE'].data[0]
 		for k, v in attributes.iteritems():
 			self.attributes[k] = v
-		print ' made {0} from SIMBAD'.format(self)
+		print '        made {0} from SIMBAD'.format(self)
 
 	def atEpoch(self, epoch, format='decimalyear'):
 		'''return the positions, at a particular epoch

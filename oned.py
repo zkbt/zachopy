@@ -6,13 +6,24 @@ import astropy.modeling.models, astropy.modeling.fitting
 import scipy.interpolate, scipy.stats
 
 def mad(x):
-	'''The median absolute deviation from the median, a robust estimator of a distribution's width.
-	For a Gaussian distribution, sigma = 1.48*MAD.'''
+	'''
+		Returns the median absolute deviation from the median,
+			a robust estimator of a distribution's width.
+
+			For a Gaussian distribution, sigma~1.48*MAD.
+	'''
 	med = np.median(x)
 	return np.median(np.abs(x - med))
 
-def binto(x=None, y=None, binwidth=0.01, yuncertainty=None, test=False, robust=True, sem=True, verbose=False):
-	'''Bin a timeseries to a given binwidth, returning both the mean and standard deviation (or median and robust scatter).'''
+def binto(x=None, y=None, yuncertainty=None,
+			binwidth=0.01,
+			test=False,
+			robust=True,
+			sem=True,
+			verbose=False):
+	'''Bin a timeseries to a given binwidth,
+		returning both the mean and standard deviation
+			(or median and approximate robust scatter).'''
 
 	if test:
 		n = 1000
@@ -23,7 +34,6 @@ def binto(x=None, y=None, binwidth=0.01, yuncertainty=None, test=False, robust=T
 		plt.plot(x, y, linewidth=0, markersize=4, alpha=0.3, marker='.', color='gray')
 		plt.errorbar(bx, by, be, linewidth=0, elinewidth=2, capthick=2, markersize=10, alpha=0.5, marker='.', color='blue')
 		return
-
 
 	min, max = np.min(x), np.max(x)
 	bins = np.arange(min, max+binwidth, binwidth)
@@ -61,11 +71,7 @@ def binto(x=None, y=None, binwidth=0.01, yuncertainty=None, test=False, robust=T
 
 
 	x = 0.5*(edges[1:] + edges[:-1])
-	#print count
-	#print mean
-	#print sumofsquares
 	return x, mean, error
-
 
 	if yuncertainty is not None:
 		print "Uh-oh, the yuncertainty feature hasn't be finished yet."
@@ -73,37 +79,117 @@ def binto(x=None, y=None, binwidth=0.01, yuncertainty=None, test=False, robust=T
 	if robust:
 		print "Hmmm...the robust binning feature isn't finished yet."
 
+def mediansmooth(x, y, xsmooth=0):
+	'''
+		smooth a (not necessarily evenly sampled) timeseries
 
-def peaks(x, y, plot=False, threshold=4, maskWidth=10):
+			x = the independent variable
+			y = the dependent variable
+			xsmooth = the *half-width* of the smoothing box
+	'''
+	assert(x.shape == y.shape)
+	ysmoothed = np.zeros_like(x)
+	for i, center in enumerate(x):
+		relevant = np.abs(x - center) <= xsmooth
+		ysmoothed[i] = np.median(y[relevant])
+	return ysmoothed
+
+def peaks(	x, y,
+			plot=False,
+			xsmooth=30,
+			threshold=100,
+			edgebuffer=10,
+			maskwidth=10):
 	'''Return the significant peaks in a 1D array.
 
-			peaks(x, y, plot=False, threshold=4, maskWidth=10)
+			peaks(x, y, plot=False, threshold=4, maskwidth=10)
 
 			required:
 				x, y = two 1D arrays
 			optional:
-				plot = False	# should we show a plot?
-				threshold = 4	# peaks above threshold significance are returned
-				maskWidth = 10	# when one peak is found, how wide of area is masked around it?
+				plot			# should we show a plot?
+				xsmooth			# half-width for median smoothing
+				threshold		# peaks above mad selected
+				maskwidth   	# when one peak is found, how wide of area is masked around it?
 	'''
-	mad = np.median(np.abs(y))
+
+	# calculate a smoothed version of the curve
+	smoothed = mediansmooth(x, y, xsmooth=xsmooth)
+	filtered = y - smoothed
+
+	# calculate the mad of the whole thing
+	mad = np.median(np.abs(filtered))
+	cutoff = mad*threshold
+
+	# create empty lists of peaks
 	xPeaks, yPeaks = [],[]
-	mask = y*0.0 + 1.0
-	highest = np.where(y*mask == np.nanmax((y*mask)))[0]
+
+	# keep track of a mask of things that aren't too close to other peaks
+	mask = np.ones_like(x)
+
+	# calculate the derivatives
+	derivatives = (filtered[1:] - filtered[:-1])/(x[1:] - x[:-1])
+
+	# estimate peaks as zero crossings
+	guesses = np.zeros_like(x).astype(np.bool)
+	guesses[1:-1] = (derivatives[:-1] > 0) * (derivatives[1:] <= 0)
+
+	# make sue the peak is high enough to be interesting
+ 	guesses *= filtered > cutoff
+
+	# make sure the peak isn't too close to an edge
+	guesses *= (x > np.min(x) + edgebuffer)*(x < np.max(x) - edgebuffer)
+
 	if plot:
-		fi, ax = plt.subplots(2,1,sharex=True)
-		ax[1].plot(x,y)
-		ax[0].plot(x,y)
-		ax[0].set_yscale('log')
-		ax[0].set_ylim(y.min(), y.max()*2)
-		ax[0].axhline(mad*threshold, xmin=x.min(), xmax=x.max(), color='black', alpha=0.3)
-		ax[1].axhline(mad*threshold, xmin=x.min(), xmax=x.max(), color='black', alpha=0.3)
+		# turn on interactive plotting
+		plt.ion()
+
+		# create a figure and gridspec
+		fi = plt.figure('peak finding')
+		gs = plt.matplotlib.gridspec.GridSpec(2,1, hspace=0.03)
+
+		# create axes for two kinds of plots
+		ax_raw = plt.subplot(gs[0])
+		plt.setp(ax_raw.get_xticklabels(), visible=False)
+		ax_filtered = plt.subplot(gs[1], sharex=ax_raw)
+
+		# plot the input vector
+		kw = dict(alpha=1, color='gray', linewidth=1)
+		ax_raw.plot(x, y, **kw)
+		ax_filtered.plot(x, filtered, **kw)
+
+		# plot the threshold
+		kw = dict(alpha=0.5, color='royalblue', linewidth=1)
+		ax_raw.plot(x, cutoff + smoothed, **kw)
+		ax_filtered.plot(x, cutoff + np.zeros_like(x), **kw)
+
+		# set the scale
+		ax_raw.set_yscale('log')
+		ax_filtered.set_yscale('log')
+		ax_filtered.set_ylim(mad, np.max(filtered))
+
+		kw = dict(marker='o', color='none', markeredgecolor='tomato', alpha=1, markersize=10)
+		ax_raw.plot(x[guesses], y[guesses], **kw)
+		ax_filtered.plot(x[guesses], filtered[guesses], **kw)
+
+		plt.draw()
+		a = raw_input("how 'bout them peaks?")
+
+	return x[guesses], y[guesses]
+
+	'''a = raw_input('?')
+	# start at the highest point
+	highest = np.nonzero(filtered*mask == np.nanmax(filtered*mask))[0]
+
+	highest = np.where(y*mask == np.nanmax((y*mask)))[0]
+
 
 	highest = highest[0]
 	#print highest, highest.shape
 	while (y*mask)[highest] > threshold*mad:
 		g1 = astropy.modeling.models.Gaussian1D(amplitude=y[highest], mean=x[highest], stddev=1.0)
-		toMask = (g1.mean + np.arange(-g1.stddev.value*maskWidth, g1.stddev.value*maskWidth)).astype(int)
+		xtomask = (g1.mean + np.arange(-g1.stddev.value*maskwidth, g1.stddev.value*maskwidth))
+		toMask = np.interp(xtomask, x, np.arange(len(x))).astype(int)
 		toMask = toMask[toMask < len(x)]
 		toMask = toMask[toMask >= 0]
 
@@ -127,7 +213,8 @@ def peaks(x, y, plot=False, threshold=4, maskWidth=10):
 		ax[0].scatter(xPeaks, yPeaks)
 		ax[1].scatter(xPeaks, yPeaks)
 
-	return np.array(xPeaks), np.array(yPeaks)
+	a = raw_input('what do you think of this peakfinding?')
+	return np.array(xPeaks), np.array(yPeaks)'''
 
 def subtractContinuum(s, n=3):
 	'''Take a 1D array, use spline to subtract off continuum.

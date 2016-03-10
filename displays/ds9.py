@@ -15,12 +15,14 @@ class ds9(Display):
                     name='general',
                     wait=10,
                     minimal=True,
-                    xsize=300, ysize=300, **kwargs):
+                    xsize=300, ysize=300,
+                    rotate=None, **kwargs):
         '''initialize the ds9 display object
             name = an identifier so you can point back to this
                     ds9 display, e.g. to refresh it later
             wait = how many seconds to wait when trying to open ds9
             minimial = hide all the bells and whistles
+            rotate = should images be rotated by default
             '''
 
         # pass kw on to Display
@@ -42,6 +44,8 @@ class ds9(Display):
             self.sparse()
 
         self.resize(xsize, ysize)
+
+        self.rotate=rotate
 
     def sparse(self, toremove=[ 'info',
                                 'panner',
@@ -166,6 +170,12 @@ class ds9(Display):
     def clear(self):
         self.window.set("frame delete all")
 
+    def new(self):
+        '''create a new frame'''
+        self.window.set("frame new")
+        if self.rotate is not None:
+            self.window.set("rotate to {0}".format(self.rotate))
+
     def one(self, image, clobber=False, **options):
         '''Display one image in ds9.
 
@@ -179,7 +189,7 @@ class ds9(Display):
             self.clear()
 
         # create a new frame for this image
-        self.window.set("frame new")
+        self.new()
 
         # fill it with the data
         self.window.set_np2arr(image.astype(np.float).squeeze())
@@ -211,6 +221,9 @@ class ds9(Display):
         '''show only a single frame at a time'''
         self.window.set('single')
 
+    def zoom(self, how='to fit'):
+        '''zoom on the current image'''
+        self.window.set('zoom {0}'.format(how))
     def replace(self, image, i):
         '''Replace the image in the a specific ds9 frame with a new one.
 

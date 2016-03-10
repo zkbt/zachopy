@@ -1,7 +1,7 @@
 '''Generate a finder chart for a star with high proper motion.'''
 import matplotlib.pyplot as plt
 import numpy as np
-from ds9 import *
+import pyds9
 from astropy.io import ascii
 from astropy import coordinates, units
 import regions
@@ -19,6 +19,7 @@ class Camera(object):
 		self.instruments = {}
 		self.instruments['LDSS3C'] ={'size':8.0, 'inflate':1.8}
 		self.instruments['CHIRON'] ={'size':3.0, 'inflate':1.8}
+		self.instruments['MIKE'] ={'size':3.0, 'inflate':1.8}
 		self.instruments['PISCO'] ={'size':9.0, 'inflate':1.8}
 		self.setup(name)
 
@@ -45,7 +46,7 @@ class Finder(object):
 		if type(star) == str:
 			# if star is a string, use it (and starkw) to create star object
 			self.name = star
-			self.star = zachopy.star.Star(name, **starkw)
+			self.star = zachopy.star.Star(self.name, **starkw)
 		else:
 			# if star isn't a string, it must be a zachopy.star.Star object'''
 			self.star = star
@@ -77,7 +78,10 @@ class Finder(object):
 			self.coordstring = self.coordstring.replace(letter, ':')
 		self.coordstring = self.coordstring.replace('s', '')
 
-		self.w = ds9()
+		self.w = pyds9.DS9('finders')
+		toremove=[ 'info','panner','magnifier','buttons']
+		for what in toremove:
+			self.w.set('view {0} no'.format(what))
 		self.w.set("frame delete all")
 		self.size = self.camera.size
 		self.inflate = self.camera.inflate
@@ -126,8 +130,8 @@ class Finder(object):
 		xpixels = self.w.get('''fits header keyword "'NAXIS1'" ''')
 		ypixels = self.w.get('''fits header keyword "'NAXIS1'" ''')
 		self.scale = np.minimum(int(xpixels), self.npixels)/float(xpixels)
-		self.w.set("width {0:.0f}".format(int(xpixels)*self.scale))
-		self.w.set("height {0:.0f}".format(int(ypixels)*self.scale))
+		self.w.set("width {0:.0f}".format(self.npixels))
+		self.w.set("height {0:.0f}".format(self.npixels))
 
 		# add circles centered on the target position
 		r = regions.Regions("LDSS3C", units="fk5", path=finderdir )

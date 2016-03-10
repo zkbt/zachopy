@@ -42,6 +42,13 @@ class Magellan(CatalogEntry):
         magpmdec = self.star.pmdec/1000.0
         self.columns['pmdec'] = magpmdec
 
+        for k in ['pmra', 'pmdec']:
+            try:
+                assert(self.self.columns[k].mask == False)
+            except (AssertionError,AttributeError):
+                self.columns[k] = 0.0
+                print "replaced masked {0} with 0".format(k
+                )
         # set the rotator mode to offset nothing from last position
         self.columns['rotatorangle'] = 0.0
         self.columns['rotatormode'] = 'OFF'
@@ -64,9 +71,15 @@ class Magellan(CatalogEntry):
             self.columns['comment']  = ''
 
     def machine(self):
-        f = '{number:03.0f} {name:10s} {ra:10s} {dec:9s} {equinox:6.1f} {pmra:>5.2f} {pmdec:>5.2f} {rotatorangle:>6.1f} {rotatormode:3s} {guide1_ra} {guide1_dec} {guide1_equinox} {guide2_ra} {guide2_dec} {guide2_equinox} {epoch:6.1f}'
+        f = 'M{number:03.0f} {name:25s} {ra:10s} {dec:9s} {equinox:6.1f} {pmra:>5.2f} {pmdec:>5.2f} {rotatorangle:>6.1f} {rotatormode:3s} {guide1_ra} {guide1_dec} {guide1_equinox} {guide2_ra} {guide2_dec} {guide2_equinox} {epoch:6.1f}'
         return f.format(**self.columns)
 
     def human(self):
-        f = '{number:03.0f} {name:10s} {ra:10s} {dec:9s} # V={V:4.1f}, {comment}'
+        f = 'M{number:03.0f} {name:25s} {ra:10s} {dec:9s} # V={V:4.1f}, {comment}'
         return f.format(**self.columns)
+
+class MIKE(Magellan):
+    def populate(self, *args, **kwargs):
+        Magellan.populate(self, *args, **kwargs)
+        self.columns['rotatorangle'] = 0.0
+        self.columns['rotatormode'] = 'GRV'
