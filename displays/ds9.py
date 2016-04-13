@@ -170,13 +170,17 @@ class ds9(Display):
     def clear(self):
         self.window.set("frame delete all")
 
-    def new(self):
+    def new(self, frame=None):
         '''create a new frame'''
-        self.window.set("frame new")
+        if frame is None:
+            self.window.set("frame new")
+        else:
+            self.window.set("frame {:.0f}".format(frame))
+
         if self.rotate is not None:
             self.window.set("rotate to {0}".format(self.rotate))
 
-    def one(self, image, clobber=False, **options):
+    def one(self, image, clobber=False, frame=None, **options):
         '''Display one image in ds9.
 
             image = 2D image to display
@@ -189,7 +193,7 @@ class ds9(Display):
             self.clear()
 
         # create a new frame for this image
-        self.new()
+        self.new(frame=frame)
 
         # fill it with the data
         self.window.set_np2arr(image.astype(np.float).squeeze())

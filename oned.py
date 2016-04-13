@@ -1,9 +1,15 @@
 '''Tools for dealing with 1D arrays, particularly timeseries and spectra.'''
-import matplotlib.pyplot as plt
-import numpy as np
-np.seterr(divide='ignore')
-import astropy.modeling.models, astropy.modeling.fitting
+import matplotlib.pyplot as plt, numpy as np
 import scipy.interpolate, scipy.stats
+from astropy.modeling.models import Gaussian1D
+from astropy.modeling.fitting import LevMarLSQFitter
+
+# ignore divide errors
+np.seterr(divide='ignore')
+
+def minmax(x):
+	'''Return tuple of the (finite) max and min of an array.'''
+	return np.nanmin(x), np.nanmax(x)
 
 def mad(x):
 	'''
@@ -99,33 +105,39 @@ def peaks(	x, y,
 			xsmooth=30,
 			threshold=100,
 			edgebuffer=10,
-			maskwidth=10):
+			widthguess=1,
+			maskwidth=3,
+			returnfiltered=False):
 	'''Return the significant peaks in a 1D array.
-
-			peaks(x, y, plot=False, threshold=4, maskwidth=10)
 
 			required:
 				x, y = two 1D arrays
+
 			optional:
-				plot			# should we show a plot?
-				xsmooth			# half-width for median smoothing
-				threshold		# peaks above mad selected
-				maskwidth   	# when one peak is found, how wide of area is masked around it?
+				plot		# should we show a plot?
+				xsmooth		# half-width for median smoothing
+				threshold	# how many MADs above background for peaks?
+				edgebuffer	# reject peaks with this distance of an edge
+				widthguess	# about how wide will the peaks be?
+				maskwidth   # peak fits use x's within (maskwidth)*(widthguess)
+
+			If returnfiltered==True, then will return filtered arrays:
+				(xPeaks, yPeaks, xfiltered, yfiltered).
+
+			If returnfiltered==False, then only returns the peaks:
+				(xPeaks, yPeaks)
 	'''
 
 	# calculate a smoothed version of the curve
 	smoothed = mediansmooth(x, y, xsmooth=xsmooth)
-	filtered = y - smoothed
+
+	filtered = (y - smoothed)
 
 	# calculate the mad of the whole thing
 	mad = np.median(np.abs(filtered))
-	cutoff = mad*threshold
 
-	# create empty lists of peaks
-	xPeaks, yPeaks = [],[]
-
-	# keep track of a mask of things that aren't too close to other peaks
-	mask = np.ones_like(x)
+	# normalize the filtered timeseries
+	filtered /=mad
 
 	# calculate the derivatives
 	derivatives = (filtered[1:] - filtered[:-1])/(x[1:] - x[:-1])
@@ -135,10 +147,11 @@ def peaks(	x, y,
 	guesses[1:-1] = (derivatives[:-1] > 0) * (derivatives[1:] <= 0)
 
 	# make sue the peak is high enough to be interesting
- 	guesses *= filtered > cutoff
+ 	guesses *= filtered > threshold
 
 	# make sure the peak isn't too close to an edge
 	guesses *= (x > np.min(x) + edgebuffer)*(x < np.max(x) - edgebuffer)
+
 
 	if plot:
 		# turn on interactive plotting
@@ -160,23 +173,76 @@ def peaks(	x, y,
 
 		# plot the threshold
 		kw = dict(alpha=0.5, color='royalblue', linewidth=1)
-		ax_raw.plot(x, cutoff + smoothed, **kw)
-		ax_filtered.plot(x, cutoff + np.zeros_like(x), **kw)
+		ax_raw.plot(x, threshold*mad + smoothed, **kw)
+		ax_filtered.plot(x, threshold + np.zeros_like(x), **kw)
 
 		# set the scale
 		ax_raw.set_yscale('log')
 		ax_filtered.set_yscale('log')
 		ax_filtered.set_ylim(mad, np.max(filtered))
 
-		kw = dict(marker='o', color='none', markeredgecolor='tomato', alpha=1, markersize=10)
-		ax_raw.plot(x[guesses], y[guesses], **kw)
-		ax_filtered.plot(x[guesses], filtered[guesses], **kw)
+		# plot the peak guesses
+		markerkw = dict(	marker='o', markersize=6,
+					color='none', markeredgecolor='tomato',
+					alpha=0.5)
+		ax_raw.plot(x[guesses], y[guesses], **markerkw)
+		ax_filtered.plot(x[guesses], filtered[guesses], **markerkw)
+
+		# create an empty plot object for showing the fits in progress
+		fitplotter = ax_filtered.plot([],[],
+						alpha=0.5, color='red', linewidth=1)[0]
 
 		plt.draw()
 		a = raw_input("how 'bout them peaks?")
 
-	return x[guesses], y[guesses]
 
+	# create empty lists of peaks
+	xPeaks, yPeaks = [],[]
+
+	# create a fitter object
+	fitter = LevMarLSQFitter()
+	for g in np.nonzero(guesses)[0]:
+
+		# initialize an approximate Gaussian
+		gauss = Gaussian1D(	mean=x[g],
+							amplitude=filtered[g],
+							stddev=widthguess)
+
+		# which points are relevant to this fit?
+		mask = np.abs(x - x[g]) <= maskwidth*widthguess
+
+		# use LM to fit the peak position and width
+		fit = fitter(gauss, x[mask], filtered[mask])
+
+		# store the peak values
+		distancemoved = np.abs((fit.mean.value - x[g])/fit.stddev.value)
+		if distancemoved <= 3.0:
+			xPeaks.append(fit.mean.value)
+			yPeaks.append(fit.amplitude.value)
+
+			if plot:
+
+				# update the Gaussian's parameters, and plot it
+				gauss.parameters = fit.parameters
+				xfine = np.linspace(*minmax(x[mask]), num=50)
+				fitplotter.set_data(xfine, gauss(xfine))
+
+
+				# plot the fitted peak
+				markerkw['color'] = markerkw['markeredgecolor']
+				markerkw['alpha'] = 1
+				ax_filtered.plot(xPeaks[-1], yPeaks[-1], **markerkw)
+
+				# set the xlimits
+				#ax_filtered.set_xlim(*minmax(x[mask]))
+
+				plt.draw()
+				a = raw_input('  and this one in particular?')
+
+	if returnfiltered:
+		return np.array(xPeaks), np.array(yPeaks), x, filtered
+	else:
+		return np.array(xPeaks), np.array(yPeaks)
 	'''a = raw_input('?')
 	# start at the highest point
 	highest = np.nonzero(filtered*mask == np.nanmax(filtered*mask))[0]
@@ -216,7 +282,7 @@ def peaks(	x, y,
 	a = raw_input('what do you think of this peakfinding?')
 	return np.array(xPeaks), np.array(yPeaks)'''
 
-def subtractContinuum(s, n=3):
+def subtractContinuum(s, n=3, plot=False):
 	'''Take a 1D array, use spline to subtract off continuum.
 
 			subtractContinuum(s, n=3)
@@ -231,13 +297,17 @@ def subtractContinuum(s, n=3):
 	x = np.arange(len(s))
 	points = (np.arange(n)+1)*len(s)/(n+1)
 	spline = scipy.interpolate.LSQUnivariateSpline(x,s,points)
-	#plt.ion()
-	#plt.figure()
-	#plt.plot(x, s1)
-	#plt.plot(x, spline(x), linewidth=5, alpha=0.5)
+	if plot:
+		plt.ion()
+		plt.figure()
+		plt.plot(x, s1)
+		plt.plot(x, spline(x), linewidth=5, alpha=0.5)
 	return s - spline(x)
 
 def binsizes(x):
+	'''If x is an array of bin centers, calculate what their sizes are.
+		(assumes outermost bins are same size as their neighbors)'''
+
 	binsize = np.zeros_like(x)
 	binsize[0:-1] = (x[1:] - x[0:-1])
 	binsize[-1] = binsize[-2]
@@ -415,6 +485,8 @@ def plothistogram( y, nbins=None, binwidth=0.1, ax=plt.gca(), expectation=None, 
 	#assert(False)
 
 def binnedrms(y):
+	'''Calculate the (unweighted) binned RMS of an array.'''
+
 	# define a dummy x variable
 	x = np.arange(len(y))
 
@@ -427,7 +499,7 @@ def binnedrms(y):
 		#print n[i], rms[i]
 	return n, rms
 
-def plotbinnedrms(y, ax=plt.gca(), xunit=1, scale='log', yunits=1, yrange=[50,5000], updateifpossible=True, **kwargs):
+def plotbinnedrms(y, ax=None, xunit=1, scale='log', yunits=1, yrange=[50,5000], updateifpossible=True, **kwargs):
 	n, rms = binnedrms(y*yunits)
 	x = xunit*n
 
@@ -451,21 +523,34 @@ def plotbinnedrms(y, ax=plt.gca(), xunit=1, scale='log', yunits=1, yrange=[50,50
 		ax.set_ylim(0, np.max(yrange))
 
 def acf(y):
+	'''Calculate the autocorrelation function of an array,
+		returning an array of lags and an array with the acf.'''
+
 	a = np.correlate(y,y,'full')
 	trimmed = a[len(a)/2:]
 	lag = np.arange(len(trimmed))
 	return lag, trimmed/np.correlate(y,y)
 
 
-def plotautocorrelation(y, xunit=1, ax= plt.gca(), max=25,  yrange=[-0.2, 1], **kwargs):
+def plotautocorrelation(y, 	ax=None,
+							xunit=1,
+							max=25,
+							yrange=[-0.2, 1],
+							**kwargs):
+	'''Plot the autocorrelation function of an array, as a function of lag.
+
+			y = the array, must be evenly spaced in x
+			ax = the Axes object to plot in
+			xunit = the scale of the x-coordinate (e.g. x[1] - x[0])
+			max = how many lag gridpoints to show?
+			yrange = the ylimits for the plot
+			**kwargs = passed to the ax.plot command
+	'''
+
 	lag, auto = acf(y)
 	x = lag*xunit
 	end = np.minimum(len(y), max)
-	#try:
-	#	lines = ax.get_lines()
-	#	lines[1].set_data
-	#except:
-	#	pass
+
 	ax.plot([0, end -1], [0,0], linestyle='--', color='black', alpha=0.25, linewidth=3)
 	ax.plot(x, auto, **kwargs)
 	ax.set_xlim(-1, end)
@@ -479,7 +564,7 @@ def ccf(f, g, scale=1.0):
 		g = an N-element array (for example, spectrum of template star)
 		scale = a scalar indicating what the indices of f and g (one unit of "lag") correspond to
 
-		'''
+	'''
 
 	# how long are our arrays
 	N = len(f)
@@ -523,7 +608,7 @@ def todcor(f, g1, g2, scale=1.0, luminosity_ratio=None):
 			a = a[ok].flatten()[peak]
 		else:
 			a = luminosity_ratio*sigma_g2/sigma_g1
-		print "alpha spans", np.min(a), np.max(a)
-		return  (C_1(s1) + a*C_2(s2))/np.sqrt(1.0 + 2*a*C_12(s2 - s1) + a**2), a*sigma_g1/sigma_g2
+		#print "alpha spans", np.min(a), np.max(a)
+		return (C_1(s1) + a*C_2(s2))/np.sqrt(1.0 + 2*a*C_12(s2 - s1) + a**2), a*sigma_g1/sigma_g2
 
 	return R
