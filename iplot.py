@@ -1,7 +1,7 @@
 '''Generate interactive plots, so you can (e.g.) use the location of a mouse-click in code.'''
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-from zachopy.Talker import Talker
+from Talker import Talker
 class iplot(Talker):
 	def __init__(self, nRows, nCols, verbose=True, **kwargs):
 		'''initialize as you would a matplotlib.gridspec.GridSpec,

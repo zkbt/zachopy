@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 # See PEP 0440: https://www.python.org/dev/peps/pep-0440/#version-scheme
 # Consider making this the same as the last tagged release version

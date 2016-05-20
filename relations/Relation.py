@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import astropy.io.ascii
 import scipy.interpolate
 import os
-from zachopy.Talker import Talker
+from ..Talker import Talker
 
 class Relation(Talker):
     '''Base class for astrophysical relations, defining tools to read tables, define methods, etc...'''
