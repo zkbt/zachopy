@@ -3,9 +3,6 @@
 # Author: Hannah Diamond-Lowe
 # Date: 26 Fab 2016
 
-from astropy.io import fits
-import numpy as np
-from astropy.coordinates import SkyCoord
 from astropy.io import ascii
 
 

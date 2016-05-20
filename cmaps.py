@@ -1,5 +1,6 @@
 import matplotlib.colors as co
-import numpy as np, scipy.interpolate
+import numpy as np
+
 
 def name2color(name):
     """Return the 3-element RGB array of a given color name."""

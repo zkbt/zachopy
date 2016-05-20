@@ -1,5 +1,4 @@
 '''Wrapper to generate ds9 region files, for sketching on FITS images in ds9.'''
-import numpy as np
 import string
 
 class Regions():
