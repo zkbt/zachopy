@@ -300,7 +300,7 @@ def subtractContinuum(s, n=3, plot=False):
 	if plot:
 		plt.ion()
 		plt.figure()
-		plt.plot(x, s1)
+		plt.plot(x, s)
 		plt.plot(x, spline(x), linewidth=5, alpha=0.5)
 	return s - spline(x)
 

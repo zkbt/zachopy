@@ -1,18 +1,16 @@
 '''Generate a finder chart for a star with high proper motion.'''
-import matplotlib.pyplot as plt
+import os
+
 import numpy as np
 import pyds9
-from astropy.io import ascii
-from astropy import coordinates, units
-import regions
-import zachopy.star
-import zachopy.utils
-import os
-import copy
+
+import displays.regions as regions
+from star import Star
+import utils
 from slit_mask_regions import slit_mask_regions
 
 finderdir = os.environ['COSMOS'] + 'Finders/'
-zachopy.utils.mkdir(finderdir)
+utils.mkdir(finderdir)
 
 class Camera(object):
 	def __init__(self,name):
@@ -47,7 +45,7 @@ class Finder(object):
 		if type(star) == str:
 			# if star is a string, use it (and starkw) to create star object
 			self.name = star
-			self.star = zachopy.star.Star(self.name, **starkw)
+			self.star = Star(self.name, **starkw)
 		else:
 			# if star isn't a string, it must be a zachopy.star.Star object'''
 			self.star = star
@@ -114,7 +112,7 @@ class Finder(object):
 		self.w.set("match frame wcs")
 
 	def save(self):
-		zachopy.utils.mkdir('finders')
+		utils.mkdir('finders')
 		for d in [finderdir, 'finders/']:
 			print "saveimage " + d + self.name.replace(' ', '') + ".png"
 			self.w.set("saveimage " + d + self.name.replace(' ', '') + ".png")

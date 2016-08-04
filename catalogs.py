@@ -1,5 +1,7 @@
-import numpy as np, matplotlib.pyplot as plt
 from collections import OrderedDict
+
+import numpy as np
+
 
 class CatalogEntry(object):
     pass

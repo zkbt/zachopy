@@ -1,7 +1,8 @@
 '''Utilities often used by Zach B-T.'''
 import os
+
 import numpy as np
-import matplotlib.pyplot as plt
+
 
 # a mkdir that doesn't complain
 def mkdir(path):
