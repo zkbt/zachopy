@@ -75,7 +75,12 @@ class Magellan(CatalogEntry):
         return f.format(**self.columns)
 
     def human(self):
-        f = 'M{number:03.0f} {name:25s} {ra:10s} {dec:9s} # V={V:4.1f}, {comment}'
+        f = 'M{number:03.0f} {name:25s} {ra:10s} {dec:9s} # '
+        if 'V' in self.columns:
+            f += 'V={V:4.1f}, '
+        if 'R' in self.columns:
+            f += 'R={R:4.1f}, '
+        f += '{comment}'
         return f.format(**self.columns)
 
 class MIKE(Magellan):

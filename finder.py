@@ -21,6 +21,7 @@ class Camera(object):
 		self.instruments['CHIRON'] ={'size':3.0, 'inflate':1.8}
 		self.instruments['MIKE'] ={'size':3.0, 'inflate':1.8}
 		self.instruments['PISCO'] ={'size':9.0, 'inflate':1.8}
+		self.instruments['NICFPS'] = {'size':4.5, 'inflate':1.8}
 		self.setup(name)
 
 	def setup(self, name):

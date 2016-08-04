@@ -45,7 +45,8 @@ erg = g*cm**2/second**2 # (should be 1!)
 Joule = 1e7*erg
 
 # power
-
+Lsun = 3.8270e33 # erg/s
+watt = 1e7
 
 # temperatures
 K = 1.0

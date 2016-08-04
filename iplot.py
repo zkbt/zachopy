@@ -1,5 +1,10 @@
 '''Generate interactive plots, so you can (e.g.) use the location of a mouse-click in code.'''
 import matplotlib.pyplot as plt
+# turn off default key mappings for matplotlib
+for k in plt.rcParams.keys():
+    if 'keymap' in k:
+        plt.rcParams[k] = ''
+
 import matplotlib.gridspec as gridspec
 from zachopy.Talker import Talker
 class iplot(Talker):
@@ -96,10 +101,8 @@ class iplot(Talker):
 
 		# start the loop (it'll end when key is pressed)
 		self.startloop()
+		self.speak('"{}" pressed at {}, {}'.format(self.keypressed.key, self.keypressed.xdata, self.keypressed.ydata))
 
-		print self.keypressed.key
-		print self.keypressed.xdata
-		print self.keypressed.ydata
 		# return the key that was pressed
 		return self.keypressed
 

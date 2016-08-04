@@ -2,28 +2,43 @@ from Display import *
 import matplotlib.animation as animation
 class Movie(Display):
     '''Display 3D dataset as a movie.'''
-    def __init__(self, **kwargs):
+    def __init__(self, pattern=None, **kwargs):
         Display.__init__(self, **kwargs)
+        if pattern is not None:
+            if '.fit' in pattern:
+                self.fromFITS(pattern, **kwargs)
+            elif '.pdf' in pattern:
+                self.fromPDFs(pattern, **kwargs)
 
     def fromPDFs(self, pattern, directory=None, stride=1, bitrate=1800*10, fps=30, **kwargs):
+
 
         # load the filenames to include
         self.filenames = glob.glob(pattern)[::stride]
 
+        self.speak('making movie from {} PDFs matching'.format(len(self.filenames)))
+        self.speak('  {}'.format(pattern))
+
         # make sure the output directory exists
         if directory is None:
             directory = 'movie/'
-
         zachopy.utils.mkdir(directory)
 
-        for i in range(len(self.filenames)):
+        self.speak('first, converting them to .png files')
+        for i in range(3):#range(len(self.filenames)): KLUDGE!
             input = self.filenames[i]
             png = directory + 'formovie_{0:05.0f}.png'.format(i)#input.replace('/', '_').replace('.pdf', '.png')
             command =  'convert -density 100 {input} {png}'.format(**locals())
             print command
             os.system(command)
 
-        moviecommand = 'convert -delay 10 {directory}*.png  movie.mp4'.format(**locals())
+        pngpattern = '{directory}*.png'.format(**locals())
+        self.fromImages(pattern=pngpattern, **kwargs)
+
+    def fromImages(self, pattern, filename='movie.mp4', **kwargs):
+        self.speak('making movie from {} images matching'.format(len(glob.glob(pattern))))
+        self.speak('  {}'.format(pattern))
+        moviecommand = 'convert -delay 10 {pattern} {filename}'.format(**locals())
         print moviecommand
         os.system(moviecommand)
 
