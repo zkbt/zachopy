@@ -56,11 +56,7 @@ def polyInterpolate(image, bad, axis=0, order=2, visualize=True):
         plt.figure('interpolating in a 2D image')
         gs = plt.matplotlib.gridspec.GridSpec(1,1)
         ax = plt.subplot(gs[0,0])
-<<<<<<< HEAD
-        d = zachopy.displays.ds9('poly')
-=======
         d = displays.ds9('poly')
->>>>>>> 351cdebdbb2e5ed50e9b2c578abfe7224169177d
 
     for i in range(image.shape[axis]):
         ydata = image.take(i, axis=axis)
@@ -114,11 +110,7 @@ def polyInterpolate(image, bad, axis=0, order=2, visualize=True):
 
 def estimateBackground(image, axis=-1):
 
-<<<<<<< HEAD
-    display = zachopy.displays.ds9('background subtraction')
-=======
     display = displays.ds9('background subtraction')
->>>>>>> 351cdebdbb2e5ed50e9b2c578abfe7224169177d
     display.one(image, clobber=True)
 
     roughSky1d = np.median(image, axis)
