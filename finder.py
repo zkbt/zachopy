@@ -9,7 +9,10 @@ from star import Star
 import utils
 from slit_mask_regions import slit_mask_regions
 
-finderdir = os.environ['COSMOS'] + 'Finders/'
+try:
+    finderdir = os.environ['COSMOS'] + 'Finders/'
+except KeyError:
+    finderdir = ''
 utils.mkdir(finderdir)
 
 class Camera(object):
