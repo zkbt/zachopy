@@ -2,6 +2,7 @@ from Display import *
 import zachopy.iplot
 import matplotlib.colors as colors
 import zachopy.oned
+import matplotlib.pyplot as plt
 
 class loupe(Display):
     def __init__(self, **kwargs):
