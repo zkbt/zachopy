@@ -1,10 +1,91 @@
 from collections import OrderedDict
-
+from zachopy.finder import Finder
+import os
 import numpy as np
+
+class Catalog:
+    def __init__(self, stars=[], name='catalog'):
+        '''Initialize a catalog object, from a list of stars.'''
+        self.stars = stars
+        for s in self.stars:
+            s.entry = self.style(s)
+        self.name = name
+
+    def writeToText(self, path=''):
+        '''Write catalog out to text files readable by machines and humans.'''
+
+        self.prefix = os.path.join(path, self.name)
+        with open('{}.{}'.format(self.prefix, self.suffix), 'w') as f:
+            for s in self.stars:
+                f.write(s.entry.machine() + '\n')
+
+        with open('{}.forhumans'.format(self.prefix), 'w') as f:
+            for s in self.stars:
+                f.write(s.entry.human() + '\n')
+
+    def createFinders(self, instrument='DIS'):
+        '''Use ds9 to create finder charts.'''
+        for s in self.stars:
+            f = Finder(star=s, instrument=instrument)
+
+
+class APO(Catalog):
+    '''An APO catalog object.'''
+    def __init__(self, *args, **kwargs):
+        self.style = APOEntry
+        self.suffix = 'tui'
+        Catalog.__init__(self, *args, **kwargs)
 
 
 class CatalogEntry(object):
     pass
+
+class APOEntry(CatalogEntry):
+    def __init__(self, star):
+        '''initialize a basic APO catalog entry, from a star object'''
+
+        self.colnames = [   'name', # the name of the target, no spaces
+                            'ra', # right ascension
+                            'dec', # declination
+                            'comment',
+                            'RotAngle',
+                            'Rot'] # the epoch of the ra and dec, for PM
+
+        self.columns = OrderedDict()
+        for col in self.colnames:
+            self.columns[col] = None
+
+        self.star = star
+        self.populate()
+
+    def populate(self, epoch=2016.9):
+        self.columns['name'] = self.star.name.replace(' ', '')
+        self.columns['ra'], self.columns['dec'] = self.star.posstring(epoch, delimiter=':').split()[0:2]
+
+        for k,v in self.star.attributes.iteritems():
+            self.columns[k] = v
+        try:
+            self.columns['comment']
+        except KeyError:
+            self.columns['comment']  = ''
+
+    def machine(self):
+        f = '{name:25s} {ra:10s} {dec:9s}'
+        return f.format(**self.columns)
+
+    def human(self):
+        f = '{name:25s} {ra:10s} {dec:9s} # '
+        if 'V' in self.columns:
+            f += 'V={V:4.1f}, '
+        if 'R' in self.columns:
+            f += 'R={R:4.1f}, '
+        if 'I' in self.columns:
+            f += 'I={R:4.1f}, '
+        if 'J' in self.columns:
+            f += 'J={R:4.1f}, '
+        f += '{comment}'
+        return f.format(**self.columns)
+
 
 class Magellan(CatalogEntry):
     def __init__(self, star):
