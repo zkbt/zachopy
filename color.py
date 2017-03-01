@@ -8,7 +8,11 @@ import matplotlib.colors as co
 
 def name2color(name):
     """Return the 3-element RGB array of a given color name."""
-    return co.hex2color(co.cnames[name].lower())
+    if '#' in name:
+        h = name
+    else:
+        h = co.cnames[name].lower()
+    return co.hex2color(h)
 
 
 def nm2rgb(inputnm, intensity=1.0):

@@ -419,11 +419,11 @@ def supersample(xin=None, yin=None, xout=None, demo=False, visualize=False, slow
 		plot_yin = np.vstack((yin,yin)).reshape((-1,),order='F')
 		plt.plot(plot_xin, plot_yin, alpha=0.5, linewidth=3, color='black')
 		badinterpolation = scipy.interpolate.interp1d(xin, yin, kind='linear', bounds_error=False, fill_value=0.0)
-		plt.plot(xout, badinterpolation(xout), color='red', alpha=0.2, linewidth=2)
+		plt.plot(xout, badinterpolation(xout), color='red', alpha=0.2, linewidth=2, marker='o')
 
 		plot_xout = np.vstack((xoutleft,xoutright)).reshape((-1,),order='F')
 		plot_yout = np.vstack((yout,yout)).reshape((-1,),order='F')
-		plt.plot(plot_xout, plot_yout, color='orange', alpha=0.7, linewidth=4, markersize=10)
+		plt.plot(plot_xout, plot_yout, color='orange', marker='o', alpha=0.7, linewidth=4, markersize=10)
 		plt.plot(xout, yout, color='orange', alpha=0.7, linewidth=0, markersize=20)
 		a = raw_input('okay?')
 	return yout
@@ -490,13 +490,20 @@ def binnedrms(y):
 	# define a dummy x variable
 	x = np.arange(len(y))
 
+	# calculate for a grid of bin sizes, up to one third the y array length
 	n = np.arange(1,len(y)/3)
+
+	# create an array to store the RMS values for each bin size
 	rms = np.zeros(len(n))
+
+	# loop over bin sizes
 	for i in range(len(n)):
+		# use histogram to calculate a binned dataset (with binsize n[i])
 		binned = np.histogram(x, bins=np.arange(len(x)/n[i])*n[i], weights=y)[0]/n[i]
-		#print binned
+		# calculate the RMS of that binned dataset
 		rms[i] = np.std(binned)
-		#print n[i], rms[i]
+
+	# return the array of binsizes and RMS values corresponding to those binsizes
 	return n, rms
 
 def plotbinnedrms(y, ax=None, xunit=1, scale='log', yunits=1, yrange=[50,5000], updateifpossible=True, **kwargs):
