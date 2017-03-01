@@ -44,8 +44,15 @@ def fluxconservingresample(xin, yin, xout, test=False, visualize=False, demo=Fal
 	xinbinsize = binsizes(xin)
 	xinleft = xin - xinbinsize/2.0
 	xinright = xin + xinbinsize/2.0
+
+	# the first element should be the left edge of the first pixel
+	# last element will be right edge of last pixel
 	xinforcdf = np.hstack([xinleft, xinright[-1]])
+
+	# to the left of the first pixel, assume flux is zero
 	yinforcdf = np.hstack([0, yin])
+
+	# calculate the cumulative distribution function of the flux (at pixel edge locations)
 	cdfin = np.cumsum(yinforcdf)
 
 	# create an interpolator for that
@@ -59,8 +66,12 @@ def fluxconservingresample(xin, yin, xout, test=False, visualize=False, demo=Fal
 	xoutleft = xout - xoutbinsize/2.0
 	xoutright = xout + xoutbinsize/2.0
 	xoutcdf = np.hstack([xoutleft, xoutright[-1]])
-	# interpolate to those bin edges
+
+	# interpolate the CDF onto those bin edges
 	cdfout = cdfinterpolator(xoutcdf)
+
+	# take the derivative of the CDF to get the flux per resampled bin
+	# (xout is the center of the bin, and yout is the flux in that bin)
 	yout = np.diff(cdfout)
 
 	if visualize:
@@ -75,28 +86,31 @@ def fluxconservingresample(xin, yin, xout, test=False, visualize=False, demo=Fal
 		plt.sca(ax_pdf)
 		plt.ylabel('Flux per (Original) Pixel')
 
-		# plot the original pixels
+		# plot the original pixels (in df/dpixel to compare with resampled)
 		plotboxy(xin, yin/xinbinsize,
 					label='Original Pixels', **inkw)
 
 
 		# what would a bad interpolation look like?
 		badinterpolation = scipy.interpolate.interp1d(xin, yin/xinbinsize,
-							kind='linear',
-							bounds_error=False,
-							fill_value=0.0)
+							kind='linear', bounds_error=False, fill_value=0.0)
 		plt.plot(xout, badinterpolation(xout),
 						color='blue', alpha=0.2, linewidth=1, marker='+',
 						label='Silly Simple Interpolation')
 
+		# plot the flux-conserving resampled data (again, in df/d"pixel")
 		plt.plot(xout, yout/xoutbinsize, label='Flux-Conserved Resample', **outkw)
 		plt.legend(**legkw)
 
 		# plot the CDFs
 		plt.sca(ax_cdf)
 		plt.ylabel('Cumulative Flux (from left)')
+
+		# plot the original CDF
 		plt.plot(xinforcdf, cdfin,
 					label='Original Pixels', **inkw)
+
+		# plot the interpolated CDF
 		plt.plot(xoutcdf, cdfout,
 			label='Flux-Conserved Resample', **outkw)
 		plt.legend(**legkw)
