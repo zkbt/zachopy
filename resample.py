@@ -3,6 +3,7 @@
 import numpy as np
 import scipy.interpolate
 import matplotlib.pyplot as plt
+
 def binsizes(x):
 	'''If x is an array of bin centers, calculate what their sizes are.
 		(assumes outermost bins are same size as their neighbors)'''
@@ -101,6 +102,9 @@ def fluxconservingresample(xin, yin, xout, test=False, visualize=False, demo=Fal
 		plt.legend(**legkw)
 		if demo:
 			a = raw_input("Pausing a moment to check on interpolation; press return to continue.")
+
+	# return the resampled y-values
+	return yout
 
 def testFCR(supersample=True):
 	xinitial = np.linspace(1,5,7)
