@@ -40,7 +40,7 @@ def fluxconservingresample(xin, yin, xout, test=False, visualize=False, demo=Fal
 	(either higher or lower resolution), while conserving total flux.
 	'''
 
-	# what's the cumulative distribution of the yin?
+	# set up the bins, to calculate cumulative distribution of y?
 	xinbinsize = binsizes(xin)
 	xinleft = xin - xinbinsize/2.0
 	xinright = xin + xinbinsize/2.0
@@ -121,6 +121,15 @@ def fluxconservingresample(xin, yin, xout, test=False, visualize=False, demo=Fal
 	return yout
 
 def testFCR(supersample=True):
+	'''this function tests out the resampling code
+
+			supersample=True
+				means that there will be multiple new pixels per original pixel
+
+			supersample=False
+				means that there will be fewer new pixels than original pixels
+	'''
+
 	xinitial = np.linspace(1,5,7)
 	yinitial = np.random.uniform(0.0, 0.1, len(xinitial))
 	if supersample:
