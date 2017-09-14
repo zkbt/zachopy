@@ -3,18 +3,22 @@
 import numpy as np
 import astropy.coordinates
 import astropy.units as u
+
+from Talker import Talker
 from astroquery.simbad import Simbad
 
 # these are options for how the posstring can be represented
 possible_delimiters = ['letters', ' ', ':']
 
-class Star(object):
+class Star(Talker):
 	def __init__(self,  name=None, ra=None, dec=None, **kw):
 		'''Initialize the star, gathering its data from Simbad;
 			if you supply...
 				ra and dec (with astropy units attached)
 				pmra and pmdec (in sky-projected mas/year) and epoch
 			they will be used instead of the Simbad values.'''
+
+		Talker.__init__(self)
 
 		# decide how to initialize: use coordinates? or use simbad? or else?
 		if ra is not None and dec is not None:
@@ -86,7 +90,7 @@ class Star(object):
 
 		# make sure all the proper motions are finite!
 		assert(np.isfinite(self.pmra).all())
-		print ' made {0} from custom values'.format(self)
+		self.speak(' made {0} from custom values'.format(self))
 
 	def fromSimbad(self, name, **attributes):
 		'''search for a star name in Simbad, and pull down its data'''
@@ -105,7 +109,7 @@ class Star(object):
 		self.name = name
 		self.simbadname = self.table['MAIN_ID'].data[0]
 		if len(self.simbadname) < len(self.name):
-			print "renaming {1} to {0}".format(self.simbadname, self.name)
+			self.speak( "renaming {1} to {0}".format(self.simbadname, self.name))
 			self.name = self.simbadname
 
 		ra = self.table['RA'].data[0]
@@ -123,7 +127,7 @@ class Star(object):
 		self.attributes['comment'] = self.table['SP_TYPE'].data[0]
 		for k, v in attributes.iteritems():
 			self.attributes[k] = v
-		print '        made {0} from SIMBAD'.format(self)
+		self.speak('made {0} from SIMBAD'.format(self))
 
 	def atEpoch(self, epoch, format='decimalyear'):
 		'''return the positions, at a particular epoch
@@ -138,8 +142,8 @@ class Star(object):
 			timeelapsed = (desiredtime - self.icrs.obstime).to('year').value
 		except:
 			timeelapsed = 0.0
-			print 'UH-OH! It looks like no proper motion epoch was defined.'
-			print '  Returning input coordinates.'
+			self.speak('UH-OH! It looks like no proper motion epoch was defined.')
+			self.speak('  Returning input coordinates.')
 
 		# at what rate do the coordinates change?
 		rarate = self.pmra/60.0/60.0/np.cos(self.icrs.dec.radian)/1000.0

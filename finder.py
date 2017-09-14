@@ -24,6 +24,8 @@ class Camera(object):
 		self.instruments['PISCO'] ={'size':9.0, 'inflate':1.8}
 		self.instruments['NICFPS'] = {'size':4.5, 'inflate':1.8}
 		self.instruments['DIS'] = {'size':6.0, 'inflate':1.8}
+		self.instruments['ONEMINUTE'] = {'size':1.0, 'inflate':4.}
+		self.instruments['10ARCSEC'] = {'size':10.0/60.0, 'inflate':4.}
 
 		self.setup(name)
 
@@ -104,7 +106,7 @@ class Finder(object):
 			slit_mask_regions(self.star.attributes['slits'], 'slits')
 			self.w.set("regions load {0}".format('slits.reg'))
 		except KeyError:
-			print "no slits found!"
+			print("no slits found!")
 
 		self.tidy()
 		self.save()
@@ -119,7 +121,7 @@ class Finder(object):
 	def save(self):
 		utils.mkdir('finders')
 		for d in [finderdir, 'finders/']:
-			print "saveimage " + d + self.name.replace(' ', '') + ".png"
+			print("saveimage " + d + self.name.replace(' ', '') + ".png")
 			self.w.set("saveimage " + d + self.name.replace(' ', '') + ".png")
 
 
@@ -144,14 +146,14 @@ class Finder(object):
 		imageepoch = float(self.w.get('''fits header keyword "'DATE-OBS'" ''').split('-')[0])
 
 		old = self.star.atEpoch(imageepoch)
-		print imageepoch
-		print self.star.posstring(imageepoch)
+		print(imageepoch)
+		print(self.star.posstring(imageepoch))
 
 		current = self.star.atEpoch(self.moment)
-		print self.moment
-		print self.star.posstring(self.moment)
+		print(self.moment)
+		print(self.star.posstring(self.moment))
 		r.addLine(old.ra.degree, old.dec.degree, current.ra.degree, current.dec.degree, line='0 1', color='red')
-		print old.ra.degree, old.dec.degree, current.ra.degree, current.dec.degree
+		print(old.ra.degree, old.dec.degree, current.ra.degree, current.dec.degree)
 		r.addCircle(current.ra.degree, current.dec.degree, "{0}'".format(self.size/2), text="{0:.1f}' diameter".format(self.size), font="bold {0:.0f}".format(np.round(self.scale*14.0)))
 
 		r.addCircle(current.ra.degree, current.dec.degree, "{0}'".format(2.0/60.0))

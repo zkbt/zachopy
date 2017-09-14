@@ -1,5 +1,10 @@
-from Display import *
+import glob, os
+
 import matplotlib.animation as animation
+
+from Display import *
+from .. import utils
+
 class Movie(Display):
     '''Display 3D dataset as a movie.'''
     def __init__(self, pattern=None, **kwargs):
@@ -22,7 +27,7 @@ class Movie(Display):
         # make sure the output directory exists
         if directory is None:
             directory = 'movie/'
-        zachopy.utils.mkdir(directory)
+        utils.mkdir(directory)
 
         self.speak('first, converting them to .png files')
         for i in range(3):#range(len(self.filenames)): KLUDGE!
@@ -49,7 +54,7 @@ class Movie(Display):
 
         # make sure the output directory exists
         if directory is not None:
-            zachopy.utils.mkdir(directory)
+            utils.mkdir(directory)
 
         #initialize the plot
         i = 0

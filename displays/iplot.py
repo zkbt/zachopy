@@ -1,21 +1,52 @@
-'''Generate interactive plots, so you can (e.g.) use the location of a mouse-click in code.'''
+'''
+Generate interactive plots, so you can (for example)
+use the location of a mouse-click in code.
+
+This is basically a wrapper for matplotlib's event handling
+capabilities, but it's easier for me to remember it in the
+way I have it organized here. You create a multipanel plot
+using the basic gridspec specification, and then you can connect
+to event tracking within any of those panels.'''
+
+'''
+WATCH OUT! On Mac OSX Sierra (at least), the matplotlib 'macosx' backend
+doesn't really work properly. You can catch mouse-clicks, but not key-presses,
+kind of as though the figure is permanently in the background, relative to
+your terminal.
+
+(see https://matplotlib.org/faq/osx_framework.html)
+
+This boils down to running
+
+conda install python.app
+
+and using "pythonw" instead of "python" to run scripts.
+'''
+
+
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+
+from ..Talker import Talker
+
 # turn off default key mappings for matplotlib
+# otherwise they may overlap with your custom ones
 for k in plt.rcParams.keys():
     if 'keymap' in k:
         plt.rcParams[k] = ''
 
-import matplotlib.gridspec as gridspec
-from Talker import Talker
+
 class iplot(Talker):
+	'''an interactive (multipanel) plot, built on gridspec'''
+
 	def __init__(self, nRows, nCols, verbose=True, **kwargs):
 		'''initialize as you would a matplotlib.gridspec.GridSpec,
 			but it will be interactive too.'''
 
+		Talker.__init__(self)
+
 		# make sure interactive plotting is turned on
 		plt.ion()
-
-		Talker.__init__(self)
 
 		# create a gridspec object
 		self.gs = gridspec.GridSpec(nRows,nCols,**kwargs)
@@ -23,9 +54,8 @@ class iplot(Talker):
 		# create an empty dictionary to store axes
 		self.axes = {}
 
-	def subplot(self, row=0, col=0,rowspan=1,colspan=1,name=None, **kwargs):
+	def subplot(self, row=0, col=0,rowspan=1,colspan=1, name=None, **kwargs):
 		# create the axis object, using the gridspec language
-		#	for example,
 
 		ax = plt.subplot(self.gs[row:row + rowspan, col:col + colspan], **kwargs)
 		self.figure = plt.gcf()
@@ -107,7 +137,13 @@ class iplot(Talker):
 		return self.keypressed
 
 	def watchfor(self, *args):
-		'''shortcut for mpl_connect'''
+		'''This is a shortcut for mpl_connect.
+
+            For example,
+                self.watchfor('key_press_event', self.onKeyPress)
+            will set up a connection that will cause the function
+            self.onKeyPress to be called (and passed a KeyEvent) when
+            a key_press_event occurs.'''
 		return self.figure.canvas.mpl_connect(*args)
 
 	def stopwatching(self, cids):
