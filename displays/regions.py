@@ -1,5 +1,4 @@
 '''Wrapper to generate ds9 region files, for sketching on FITS images in ds9.'''
-import string
 
 class Regions():
 	def __init__(self, name, units='physical', path=''):
@@ -64,10 +63,9 @@ class Regions():
 	def __str__(self):
 		lines = [self.header, self.units]
 		lines.extend(self.regions)
-		return string.join(lines, '\n')
+		return '\n'.join(lines)
 
-	def docs(self):
-		print	''' Regions
+''' Regions
 
 Regions provide a means for marking particular areas of an image for further analysis. Regions may also be used for presentation purposes. DS9 supports a number of region descriptions, each of which may be edited, moved, rotated, displayed, saved and loaded, via the GUI and XPA.
 

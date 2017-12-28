@@ -43,9 +43,9 @@ class Talker(object):
                         toprint = toprint.replace(k, shortcuts[k])
 
             if progress:
-                print '\r' + self._prefix + toprint.replace('\n', '\n' + equalspaces),
+                print('\r' + self._prefix + toprint.replace('\n', '\n' + equalspaces),)
             else:
-                print self._prefix + toprint.replace('\n', '\n' + equalspaces)
+                print(self._prefix + toprint.replace('\n', '\n' + equalspaces))
 
             #print textwrap.fill(self._prefix + toprint.replace('\n', '\n' + equalspaces), self._line, subsequent_indent=equalspaces + '... ')
 
@@ -55,4 +55,4 @@ class Talker(object):
     def summarize(self):
         self.speak('Here is a brief summary of {}.'.format(self.nametag))
         s = '\n'+pprint.pformat(self.__dict__)
-        print s.replace('\n', '\n'+' '*(len(self._prefix)+1)) + '\n'
+        print(s.replace('\n', '\n'+' '*(len(self._prefix)+1)) + '\n')

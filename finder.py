@@ -4,10 +4,10 @@ import os
 import numpy as np
 import pyds9
 
-import displays.regions as regions
-from star import Star
-import utils
-from slit_mask_regions import slit_mask_regions
+import zachopy.displays.regions as regions
+from zachopy.star import Star
+from zachopy import utils
+
 
 try:
     finderdir = os.environ['COSMOS'] + 'Finders/'
@@ -26,6 +26,7 @@ class Camera(object):
 		self.instruments['DIS'] = {'size':6.0, 'inflate':1.8}
 		self.instruments['ONEMINUTE'] = {'size':1.0, 'inflate':4.}
 		self.instruments['10ARCSEC'] = {'size':10.0/60.0, 'inflate':4.}
+		self.instruments['ARCTIC'] = {'size':20.0, 'inflate':4.}
 
 		self.setup(name)
 
@@ -103,9 +104,10 @@ class Finder(object):
 		self.addRegions()
 
 		try:
+			from slit_mask_regions import slit_mask_regions
 			slit_mask_regions(self.star.attributes['slits'], 'slits')
 			self.w.set("regions load {0}".format('slits.reg'))
-		except KeyError:
+		except:
 			print("no slits found!")
 
 		self.tidy()

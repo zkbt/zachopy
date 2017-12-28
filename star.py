@@ -4,8 +4,8 @@ import numpy as np
 import astropy.coordinates
 import astropy.units as u
 
-from Talker import Talker
 from astroquery.simbad import Simbad
+from zachopy.Talker import Talker
 
 # these are options for how the posstring can be represented
 possible_delimiters = ['letters', ' ', ':']
@@ -125,7 +125,7 @@ class Star(Talker):
 		self.attributes = {}
 		self.attributes['V'] = float(self.table['FLUX_V'].data[0])
 		self.attributes['comment'] = self.table['SP_TYPE'].data[0]
-		for k, v in attributes.iteritems():
+		for k, v in attributes.items():
 			self.attributes[k] = v
 		self.speak('made {0} from SIMBAD'.format(self))
 

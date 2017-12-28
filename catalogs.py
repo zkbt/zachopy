@@ -23,10 +23,10 @@ class Catalog:
             for s in self.stars:
                 f.write(s.entry.human() + '\n')
 
-    def createFinders(self, instrument='DIS'):
+    def createFinders(self, instrument='DIS', **kw):
         '''Use ds9 to create finder charts.'''
         for s in self.stars:
-            f = Finder(star=s, instrument=instrument)
+            f = Finder(star=s, instrument=instrument, **kw)
 
 
 class APO(Catalog):
@@ -62,7 +62,7 @@ class APOEntry(CatalogEntry):
         self.columns['name'] = self.star.name.replace(' ', '')
         self.columns['ra'], self.columns['dec'] = self.star.posstring(epoch, delimiter=':').split()[0:2]
 
-        for k,v in self.star.attributes.iteritems():
+        for k,v in self.star.attributes.items():
             self.columns[k] = v
         try:
             self.columns['comment']
@@ -130,8 +130,7 @@ class Magellan(CatalogEntry):
                 assert(self.self.columns[k].mask == False)
             except (AssertionError,AttributeError):
                 self.columns[k] = 0.0
-                print "replaced masked {0} with 0".format(k
-                )
+                print("replaced masked {0} with 0".format(k))
         # set the rotator mode to offset nothing from last position
         self.columns['rotatorangle'] = 0.0
         self.columns['rotatormode'] = 'OFF'

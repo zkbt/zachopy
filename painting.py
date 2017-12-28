@@ -24,11 +24,12 @@ def ink_errorbar(x, y, yerr=None, xerr=None,
         if grayscale:
             color[0:3] = np.mean(color[0:3])
 
+        rgba = (color[0], color[1], color[2], color[3])
         # set the color of every part of the point to be plotted
-        kw['color'] = color
-        kw['ecolor'] = color
-        kw['markeredgecolor'] = color
-        kw['markerfacecolor'] = color
+        kw['color'] = rgba
+        kw['ecolor'] = rgba
+        kw['markeredgecolor'] = rgba
+        kw['markerfacecolor'] = rgba
 
         try:
             assert(len(zorder) > 1)

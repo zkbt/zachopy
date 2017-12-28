@@ -52,7 +52,7 @@ def rebin_total(a, *args):
 def find_nearest(array,value,verbose=False):
     idx = (np.abs(np.array(array)-value)).argmin()
     if verbose:
-    	print "{0} --> {1}".format(value, array[idx])
+        print("{0} --> {1}".format(value, array[idx]))
     return array[idx]
 
 
@@ -81,7 +81,7 @@ def find_two_nearest(array,value,verbose=False):
 	if verbose:
 		print
 		for k in locals().keys():
-			print '{0:>10} = {1}'.format(k, locals()[k])
+			print('{0:>10} = {1}'.format(k, locals()[k]))
 		print
 	return nearest
 

@@ -55,7 +55,7 @@ def binto(x=None, y=None, yuncertainty=None,
 		error = std
 		if False:
 			for i in range(len(bins)-1):
-				print bins[i], mean[i], error[i], count[i]
+				print(bins[i], mean[i], error[i], count[i])
 			a = raw_input('???')
 	else:
 		if robust:
@@ -80,10 +80,10 @@ def binto(x=None, y=None, yuncertainty=None,
 	return x, mean, error
 
 	if yuncertainty is not None:
-		print "Uh-oh, the yuncertainty feature hasn't be finished yet."
+		print("Uh-oh, the yuncertainty feature hasn't be finished yet.")
 
 	if robust:
-		print "Hmmm...the robust binning feature isn't finished yet."
+		print("Hmmm...the robust binning feature isn't finished yet.")
 
 def mediansmooth(x, y, xsmooth=0):
 	'''
@@ -147,7 +147,7 @@ def peaks(	x, y,
 	guesses[1:-1] = (derivatives[:-1] > 0) * (derivatives[1:] <= 0)
 
 	# make sue the peak is high enough to be interesting
- 	guesses *= filtered > threshold
+	guesses *= filtered > threshold
 
 	# make sure the peak isn't too close to an edge
 	guesses *= (x > np.min(x) + edgebuffer)*(x < np.max(x) - edgebuffer)

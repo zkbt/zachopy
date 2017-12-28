@@ -18,21 +18,21 @@ def test(n=100000, verbose=False, delimiter=':'):
         r = clockify(nra, ndec, delimiter=':')
         if verbose:
             print
-            print "performing random test #{0}".format(i)
-            print ra, dec
-            print s
-            print nra, ndec
-            print r
-            print '---------------'
-            print ra - nra, dec - ndec
-            print
+            print("performing random test #{0}".format(i))
+            print(ra, dec)
+            print(s)
+            print(nra, ndec)
+            print(r)
+            print('---------------')
+            print(ra - nra, dec - ndec)
+            print()
         assert(r == s)
         assert(np.abs(nra - ra) <= 0.01/3600.0*15)
         assert(np.abs(ndec - dec) <= 0.01/3600.0)
         #print r
         if i % (n/100) == 0:
-            print '{0}/{1}'.format(i,n)
-    print 'clocking and unclocking worked on {0} random positions'.format(n)
+            print('{0}/{1}'.format(i,n))
+    print('clocking and unclocking worked on {0} random positions'.format(n))
 
 def unclockify(s, delimiter='letters'):
     '''Convert a positional string to decimal RA and Dec values (in degrees).'''
