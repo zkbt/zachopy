@@ -24,7 +24,20 @@ and using "pythonw" instead of "python" to run scripts.
 '''
 
 
+'''
+Check out matplotlib github issue #9795 (Backend switching)
+for discussion
+'''
+'''
+OR WAIT!
+
+Another alternative is to force it to use the 'qt5Agg' backend for making
+interactive plots, as is done here.
+'''
+
 import matplotlib.pyplot as plt
+plt.switch_backend('qt5Agg')
+
 import matplotlib.gridspec as gridspec
 
 from ..Talker import Talker
@@ -163,3 +176,12 @@ class iplot(Talker):
 		'''stop the loop, and disconnect watchers'''
 		self.stoploop()
 		self.stopwatching(self.cids)
+
+def test():
+    import numpy as np
+    i = iplot(1,1)
+    i.subplot(0,0)
+    a = i.axes['ax0']
+    a.plot(np.random.normal(0,1,10))
+    print(i.getKeyboard())
+#print(i.getKeyboard(2))

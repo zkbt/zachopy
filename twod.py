@@ -1,20 +1,37 @@
-'''Tools for dealing with 1D arrays, particularly timeseries of images.'''
+'''Tools for dealing with 2D arrays (images), or 3D arrays of images.'''
 import numpy as np
 import scipy.ndimage
 import matplotlib.pyplot as plt
-import displays.ds9
+try:
+    from .displays.ds9 import ds9
+except ImportError:
+    def ds9():
+        raise NameError("This is a kludge, because ds9 couldn't be imported.")
 
 def scatter(cube, axis=0):
+    '''An outlier-robust scatter, based on the MAD, along any axis.'''
+
+    # figure out the shape that can be recast appropriately when subtracting a median
     shape = np.array(cube.shape)
     shape[axis] = 1
 
+    # take the median along the specified axis
     med = np.median(cube, axis=axis)
+
+    # determin the mad along that axis
     mad = np.median(np.abs(cube - med.reshape(shape)), axis=axis)
+
+    # scale this so it looks like a Gaussian sigma
     return 1.48*mad
 
 
 def stack(cube, axis=0, threshold=5.0):
-    '''Combine a cube of images into one mean image, using a MAD noise estimator to reject outliers.'''
+    '''
+    Combine a cube of images into one mean image,
+    using a MAD noise estimator to reject outliers.
+    '''
+
+
     shape = np.array(cube.shape)
     shape[axis] = 1
 
@@ -56,7 +73,7 @@ def polyInterpolate(image, bad, axis=0, order=2, visualize=True):
         plt.figure('interpolating in a 2D image')
         gs = plt.matplotlib.gridspec.GridSpec(1,1)
         ax = plt.subplot(gs[0,0])
-        d = displays.ds9('poly')
+        d = ds9('poly')
 
     for i in range(image.shape[axis]):
         ydata = image.take(i, axis=axis)
@@ -110,7 +127,7 @@ def polyInterpolate(image, bad, axis=0, order=2, visualize=True):
 
 def estimateBackground(image, axis=-1):
 
-    display = displays.ds9('background subtraction')
+    display = ds9('background subtraction')
     display.one(image, clobber=True)
 
     roughSky1d = np.median(image, axis)

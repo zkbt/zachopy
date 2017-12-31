@@ -1,4 +1,4 @@
-from Display import *
+from .Display import *
 class imshow(Display):
     '''Display 2D image with imshow.'''
     def __init__(self, image, ax=None, **kwargs):

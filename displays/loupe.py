@@ -1,23 +1,44 @@
-from Display import *
-import zachopy.iplot
+from .Display import *
+from .iplot import iplot
 import matplotlib.colors as colors
 import zachopy.oned
 import matplotlib.pyplot as plt
 
 class loupe(Display):
+    '''
+    loupe is an interactive matplotlib imshow,
+    for looking at images and clicking points,
+    in a matplotlib-like plot.
+
+    It reproduces *a few* of the features
+    available from using IRAF display,
+    imexam, and ds9 to look at images interactively.
+    '''
+
+
     def __init__(self, **kwargs):
+        '''Initialize the loupe object.'''
+
         Display.__init__(self)
 
+        # populate a dictionary of available actions
+        # each option has a key to press,
+        #   a description of what it will do
+        #   a function to be called when that key is pressed
+        #   and whether the function needs to know the current mouse position
         self.options = {}
 
+        # qui
         self.options['q'] = dict(description='[q]uit without writing',
                             function=self.quit,
                             requiresposition=False)
 
+        # a crosshair will plot vertical and horizontal plots at that location
         self.options['c'] = dict(description='move the [c]rosshair, and plot slicey along it',
                             function=self.moveCrosshair,
                             requiresposition=True)
 
+        # once the crosshair is set, you can movie it up and down
         self.options['up'] = dict(description='nudge the crosshair [up]',
                             function=self.moveCrosshair,
                             requiresposition=False)
@@ -32,7 +53,14 @@ class loupe(Display):
                             requiresposition=False)
 
     def setImage(self, image):
+        '''
+        Change the image that's being shown.
+        '''
+
+        # set the image
         self.image = image
+
+        # set its x and y limits, extent, and axes
         xsize = self.imagetoplot.shape[1]
         ysize = self.imagetoplot.shape[0]
         self.extent = [ 0, xsize,
@@ -40,26 +68,56 @@ class loupe(Display):
         self.xaxis = np.arange(xsize)
         self.yaxis = np.arange(ysize)
 
+
     @property
     def slicey(self):
         '''return y, x of a slice along the spatial direction'''
+
+        # figure out the column of the image associated with the crosshair's x
         i = np.int(np.interp(self.crosshair['x'], self.xaxis, np.arange(len(self.xaxis))))
         return self.image[i,:], self.yaxis
 
     @property
     def slicex(self):
         '''return x, y of a slice along the wavelength direction'''
+
+        # figure out the column of the image associated with the crosshair's y
         i = np.int(np.interp(self.crosshair['y'], self.yaxis, np.arange(len(self.yaxis))))
         return self.xaxis, self.image[:,i]
 
     @property
     def imagetoplot(self):
         '''for plotting, the science image'''
+
+        # show the transpose of the image in imshow
         return np.transpose(self.image)
 
     def one(self, image, **kwargs):
         # for compatibility with ds9
         self.setup(image, **kwargs)
+
+    def updateImage(self, image, **kwargs):
+        '''
+        Once the loupe has been set up,
+        modify the image being shown
+        (ideally without changing anything else.)
+        '''
+
+        #
+        try:
+            # have we already created a loupe here?
+            self.plotted['2d']
+        except AttributeError:
+            # if not, set it up!
+            self.setup(image, **kwargs)
+
+        # update the data being imshowed
+        self.plotted['2d'].set_data(self.imagetoplot)
+
+        # update the plots for the slices along each axis
+        x, y = self.crosshair['x'], self.crosshair['y']
+        self.moveCrosshair(x=x, y=y)
+
 
     def setup(self, image,
                     title='', # title to go over the top of the plot
@@ -73,7 +131,14 @@ class loupe(Display):
                     initialcrosshairs=[0.0, 0.0], # where the crosshairs should start
                     aspect='equal', # kwargs for imshow
                     **kwargs):
+        '''
+        Initialize the loupe
+        (this has a pretty big overhead,
+        so use "setImage" if you can to update
+        the data being displayed)
+        '''
 
+        # set the image
         self.setImage(image)
         self.speak('setting up loupe')
 
@@ -85,11 +150,11 @@ class loupe(Display):
         plt.ion()
         self.figure = plt.figure(figsize=figsize, dpi=dpi)
         # create an interactive plot
-        self.iplot = zachopy.iplot.iplot(2,2, hspace=hspace, wspace=wspace,
-                                              left=left, right=right,
-                                              bottom=bottom, top=top,
-                                              width_ratios=width_ratios,
-                                              height_ratios=height_ratios)
+        self.iplot = iplot(2,2, hspace=hspace, wspace=wspace,
+                              left=left, right=right,
+                              bottom=bottom, top=top,
+                              width_ratios=width_ratios,
+                              height_ratios=height_ratios)
 
         # a dictionary to store the axes objects
         self.ax = {}
@@ -99,18 +164,20 @@ class loupe(Display):
         self.ax['2d'] = self.iplot.subplot(1,0)
         plt.setp(self.ax['2d'].get_xticklabels(), **labelkw)
         plt.setp(self.ax['2d'].get_yticklabels(), **labelkw)
+
         # for displaying cuts along the dispersion direction
         self.ax['slicex'] = self.iplot.subplot(0,0,sharex=self.ax['2d'])
         self.ax['slicex'].set_title(title, fontsize=8)
         plt.setp(self.ax['slicex'].get_xticklabels(), visible=False)
         plt.setp(self.ax['slicex'].get_yticklabels(), **labelkw)
+
         # for display cuts along the cross-dispersion direction
         self.ax['slicey'] = self.iplot.subplot(1,1,sharey=self.ax['2d'])
         self.ax['slicey'].xaxis.tick_top()
         plt.setp(self.ax['slicey'].get_xticklabels(), rotation=270, **labelkw)
         plt.setp(self.ax['slicey'].get_yticklabels(), visible=False)
 
-
+        # set the limits of the plot
         ok = np.isfinite(self.imagetoplot)
         self.vmin, self.vmax = np.percentile(self.imagetoplot[ok], [0,100])
 
@@ -123,12 +190,15 @@ class loupe(Display):
                                                   aspect=aspect,
                                                   zorder=0,
                                                   origin='lower',
-                                                  norm=colors.SymLogNorm(linthresh=zachopy.oned.mad(self.imagetoplot), linscale=0.1,
-                                                    vmin=self.vmin, vmax=self.vmax))
+                                                  norm=colors.SymLogNorm(
+                                                                        linthresh=zachopy.oned.mad(self.imagetoplot),
+                                                                        linscale=0.1,
+                                                                        vmin=self.vmin,
+                                                                        vmax=self.vmax))
 
+        # set the x and y limits
         self.ax['2d'].set_xlim(self.extent[0:2])
         self.ax['2d'].set_ylim(self.extent[2:4])
-
 
         # add crosshair
         crosskw = dict(alpha=0.5, color='darkorange', linewidth=1)
@@ -153,14 +223,14 @@ class loupe(Display):
 
 
     def run(self,
-                    message='', # something to annouce each loop
-                    ):
+            message='', # something to annouce each loop
+            ):
 
         # keep track of whether we're finished
         self.notconverged = True
         while self.notconverged:
 
-
+            # say the message at the start of each loop
             self.speak(message)
 
             # print the self.options
@@ -185,14 +255,18 @@ class loupe(Display):
             except AssertionError:
                 self.speak("that didn't seem to be at a valid position!")
 
-
+            # update the plot
             plt.draw()
 
     def quit(self, *args):
+        '''
+        If a [q] is pressed, quit the plot.
+        '''
         self.notconverged = False
         plt.close(self.figure)
 
-
+    """
+    ### FIX ME -- I think this belongs with mosasaurus, but got copied here. ###
     def setScale(self, pressed=None, default=False):
         '''prompt the user to select range of aperture sizes for extraction'''
         if default:
@@ -227,8 +301,9 @@ class loupe(Display):
             self.updateMasks()
         except AttributeError:
             pass
+    """
 
-    def moveCrosshair(self, pressed=None, w=None, s=None):
+    def moveCrosshair(self, pressed=None, x=None, y=None):
         '''use new values of w and s to move the crosshair and replot'''
 
         # pull the values from the mouse click
@@ -241,14 +316,14 @@ class loupe(Display):
         elif pressed.key == 'right':
             self.crosshair['x'] += 1
         elif pressed is not None:
-            w = pressed.xdata
-            s = pressed.ydata
+            x = pressed.xdata
+            y = pressed.ydata
 
             # update the stored value
-            if w is not None:
-                self.crosshair['x'] = w
-            if s is not None:
-                self.crosshair['y'] = s
+            if x is not None:
+                self.crosshair['x'] = x
+            if y is not None:
+                self.crosshair['y'] = y
 
         # update the position on the 2D plot
         self.plotted['crossy'].set_xdata(self.crosshair['x'])
@@ -261,3 +336,10 @@ class loupe(Display):
         self.ax['slicey'].set_xlim(0, self.slicey[0].max())
         self.plotted['slicex'].set_data(*self.slicex)
         self.ax['slicex'].set_ylim(0, self.slicex[1].max())
+
+def test():
+    fake = createTestImage()
+    l = loupe()
+    l.setup(fake)
+    l.run()
+    return fake, l

@@ -1,9 +1,9 @@
-from Display import *
+from .Display import *
 
 try:
     import pyds9
 except ImportError:
-    print "Uh-oh! zachopy.display is trying to 'import pyds9' and can't seem to do it. Please install it (http://hea-www.harvard.edu/RD/pyds9/)."
+    print("Uh-oh! zachopy.display is trying to 'import pyds9' and can't seem to do it. Please install it (http://hea-www.harvard.edu/RD/pyds9/).")
 import regions
 
 

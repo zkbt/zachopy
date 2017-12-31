@@ -39,4 +39,4 @@ def movie(pattern, output='movie', stride=1, bitrate=1800*5, fps=30, vmin=None, 
             imshow.set_data(image)
             figure.savefig('test.png')
             writer.grab_frame()
-            print image
+            print(image)

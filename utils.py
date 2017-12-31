@@ -1,11 +1,11 @@
-'''Utilities often used by Zach B-T.'''
+'''Utilities often used by Zach B-T. These are mostly weird, small things.'''
 import os
 
 import numpy as np
 
 
-# a mkdir that doesn't complain
 def mkdir(path):
+	'''A mkdir that doesn't complain if it fails.'''
 	try:
 		os.mkdir(path)
 	except:
@@ -55,7 +55,6 @@ def find_nearest(array,value,verbose=False):
         print("{0} --> {1}".format(value, array[idx]))
     return array[idx]
 
-
 # modified from above
 def find_two_nearest(array,value,verbose=False):
 	# assumes ordered arrays and that value falls between the min and max of the array
@@ -96,13 +95,14 @@ def interpolation_weights(bounds, value, verbose=True):
 
 
 
-
 def truncate(str, n=12, etc=' ...'):
+	'''If a string is too long, truncate it with an "etc..."'''
 	if len(str) > n:
 		return str[0:n-len(etc)] + etc
 	else:
 		return ("{0: ^%d}" % n).format(str)
 
 def mad(x):
+	'''Median absolute deviation from the median.'''
 	med = np.median(x)
 	return np.median(np.abs(x - med))

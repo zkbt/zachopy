@@ -24,11 +24,10 @@ class Talker(object):
         '''If verbose=True and terse=False, this will print to terminal. Otherwise, it won't.'''
         self.report(string, level, prelude=':-| ')
 
-
     def input(self, string='', level=0, prompt='(please respond) '):
         '''If verbose=True and terse=False, this will print to terminal. Otherwise, it won't.'''
         self.report(string, level)
-        return raw_input("{0}".format(self._prefix + prompt))
+        return input("{0}".format(self._prefix + prompt))
 
     def report(self, string='', level=0, prelude='', progress=False, abbreviate=True):
         '''If verbose=True, this will print to terminal. Otherwise, it won't.'''

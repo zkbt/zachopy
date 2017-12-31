@@ -2,7 +2,7 @@ import glob, os
 
 import matplotlib.animation as animation
 
-from Display import *
+from .Display import *
 from .. import utils
 
 class Movie(Display):
@@ -34,7 +34,7 @@ class Movie(Display):
             input = self.filenames[i]
             png = directory + 'formovie_{0:05.0f}.png'.format(i)#input.replace('/', '_').replace('.pdf', '.png')
             command =  'convert -density 100 {input} {png}'.format(**locals())
-            print command
+            print(command)
             os.system(command)
 
         pngpattern = '{directory}*.png'.format(**locals())
@@ -44,7 +44,7 @@ class Movie(Display):
         self.speak('making movie from {} images matching'.format(len(glob.glob(pattern))))
         self.speak('  {}'.format(pattern))
         moviecommand = 'convert -delay 10 {pattern} {filename}'.format(**locals())
-        print moviecommand
+        print(moviecommand)
         os.system(moviecommand)
 
     def fromFITSfiles(self, pattern, directory=None, stride=1, bitrate=1800*5, fps=30, **kwargs):
@@ -66,7 +66,7 @@ class Movie(Display):
         # initialize the animator
         metadata = dict(title=self.frame.name, artist='Z.K.B.-T.')
         self.writer = animation.FFMpegWriter(fps=fps, metadata=metadata, bitrate=bitrate)
-        print directory + '/' + self.frame.label + '.mp4'
+        print(directory + '/' + self.frame.label + '.mp4')
         with self.writer.saving(self.frame.figure, directory + '/' + self.frame.label + '.mp4', self.frame.figure.get_dpi()):
             # loop over exposures
             for i in range(len(self.filenames)):
