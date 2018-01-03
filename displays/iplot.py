@@ -183,5 +183,8 @@ def test():
     i.subplot(0,0)
     a = i.axes['ax0']
     a.plot(np.random.normal(0,1,10))
-    print(i.getKeyboard())
+    plt.draw()
+    key = i.getKeyboard()
+    print(key)
+    return key
 #print(i.getKeyboard(2))

@@ -29,7 +29,7 @@ class loupe(Display):
         self.options = {}
 
         # qui
-        self.options['q'] = dict(description='[q]uit without writing',
+        self.options['q'] = dict(description='[q]uit',
                             function=self.quit,
                             requiresposition=False)
 
@@ -118,6 +118,8 @@ class loupe(Display):
         x, y = self.crosshair['x'], self.crosshair['y']
         self.moveCrosshair(x=x, y=y)
 
+        # force a redraw of the plot
+        plt.draw()
 
     def setup(self, image,
                     title='', # title to go over the top of the plot
@@ -221,10 +223,14 @@ class loupe(Display):
         self.plotted['slicex'] = self.ax['slicex'].plot(*self.slicex,
                                                         **slicekw)[0]
 
+        plt.draw()
 
     def run(self,
             message='', # something to annouce each loop
             ):
+
+        # update the plot
+        plt.draw()
 
         # keep track of whether we're finished
         self.notconverged = True
